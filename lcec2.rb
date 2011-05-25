@@ -85,25 +85,22 @@ class LcAws
   end
   
   def get_app_instances(instances = nil)
-    all_instances = instances
-    all_instances = get_instances if all_instances.nil?
-    app_instances = Array.new
-    all_instances.each do |instance|
-      # check if it is in the app group
-      app_instances << instance if (instance.group == "AppGroup") && (instance.name.include? "app")
-    end
-    app_instances
+    get_instances_by_name("app", instances)
   end
 
   def get_loadgen_instances(instances = nil)
+    get_instances_by_name("gen", instances)
+  end
+
+  def get_instances_by_name(name_filter, instances = nil)
     all_instances = instances
     all_instances = get_instances if all_instances.nil?
-    loadgen_instances = Array.new
+    filtered_instances = Array.new
     all_instances.each do |instance|
-      # check if it is in the loadgen group
-      loadgen_instances << instance if instance.group == "LoadGenGroup"
+      # check if the name matches
+      filtered_instances << instance if instance.name.include? name_filter
     end
-    loadgen_instances
+    filtered_instances
   end
 
   #
@@ -188,10 +185,10 @@ LcAws.print_ssh_commands(ecc.get_app_instances(instances))
 puts "SSH commands (loadgen)"
 LcAws.print_ssh_commands(ecc.get_loadgen_instances(instances))
 
-puts "Stopping all app servers..."
-ecc.stop_app_servers
-puts "Done."
+#puts "Stopping all app servers..."
+#ecc.stop_app_servers
+#puts "Done."
 
-puts "Stopping all loadgen servers..."
-ecc.stop_loadgen_servers
-puts "Done."
+#puts "Stopping all loadgen servers..."
+#ecc.stop_loadgen_servers
+#puts "Done."
