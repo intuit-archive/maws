@@ -54,6 +54,10 @@ class Ec2Instance
     ""
   end
   
+  def running?
+    return @state == "running"
+  end
+  
 end
 
 class LcAws
@@ -145,14 +149,14 @@ class LcAws
   #
   def print_proxy_members(instances = nil)
     apps = get_app_instances(instances)
-    apps.each do |a|
-      puts "BalancerMember http://#{a.private_dns_name}:8080"
+    apps.each do |instance|
+      puts "BalancerMember http://#{a.private_dns_name}:8080" if instance.running?
     end
   end
 
   def self.print_ssh_commands(instances)
     instances.each do |instance|
-      puts "ssh -i #{instance.keyname}.pem root@#{instance.dns_name}"
+      puts "ssh -i #{instance.keyname}.pem root@#{instance.dns_name}"  if instance.running?
     end
   end
   
@@ -171,7 +175,7 @@ end
 ecc = LcAws.new
 instances = ecc.get_instances
 instances.each_with_index do |i, index|
-  puts "***INSTANCE #{index}***"
+  puts "**** INSTANCE #{index} ****"
   puts i.to_s
   puts "***********************"
 end
