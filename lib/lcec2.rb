@@ -1,8 +1,10 @@
 require 'rubygems'
 require 'AWS'
 
-ACCESS_KEY_ID = "AKIAIQ7UIX3FGYYFTBOA"
-SECRET_ACCESS_KEY = "JkA6BJGtxGh6tRstWWy/SB3VsxPWOvKjz4JxI9sI"
+
+#Set the aws keys in your env.
+ACCESS_KEY_ID = ENV["AWS_ACCESS_KEY_ID"]
+SECRET_ACCESS_KEY = ENV["AWS_SECRET_ACCESS_KEY"] 
 
 class Ec2Instance
   attr_accessor :instance_id,
