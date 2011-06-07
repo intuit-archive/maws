@@ -71,7 +71,17 @@ def scp_loadgen_results(ecc, instances)
       `#{cmd}`
     end
   end
-  
+end
+
+def open_loadgen_terminals(ecc, instances)
+  servers = ecc.get_loadgen_instances(instances)
+  servers.each do |lg|
+    if lg.running?
+      cmd =  "ssh -i ~/mattinasi.pem root@#{lg.dns_name}"
+      puts "opening terminal as: #{cmd}"
+      `scripts/it #{cmd}`
+    end
+  end
 end
 
 def print_usage
@@ -98,6 +108,7 @@ else
     stop_loadgens(ecc) if arg == "stop-loadgens"
     start_loadgens(ecc) if arg == "start-loadgens"
     show_loadgens(ecc,instances) if arg == "show-loadgens"
+    open_loadgen_terminals(ecc, instances) if arg == "open-loadgens"
     scp_loadgen_results(ecc,instances) if arg == "scp-loadgen-results"
   end
 end
