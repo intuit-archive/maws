@@ -29,13 +29,53 @@ def stop_apps(ecc)
 end
 
 def start_apps(ecc)
+  puts "Starting all app servers..."
+  ecc.start_app_servers
+  puts "Done."
+end
+
+def show_apps(ecc,instances)
+  puts "Current App servers:"
+  apps = ecc.get_app_instances(instances)
+  apps.each do |app|
+    puts app.name + " : " + app.state
+  end
+end
+
+def stop_loadgens(ecc)
   puts "Stopping all loadgen servers..."
   ecc.stop_loadgen_servers
   puts "Done."
 end
 
+def start_loadgens(ecc)
+  puts "Starting all loadgens servers..."
+  ecc.start_loadgen_servers
+  puts "Done."
+end
+
+def show_loadgens(ecc,instances)
+  puts "Current loadgens servers:"
+  servers = ecc.get_loadgen_instances(instances)
+  servers.each do |lg|
+    puts lg.name + " : " + lg.state
+  end
+end
+
+def scp_loadgen_results(ecc, instances)
+  servers = ecc.get_loadgen_instances(instances)
+  servers.each do |lg|
+    if lg.running?
+      cmd =  "scp -i ~/mattinasi.pem root@#{lg.dns_name}:/home/loaduser/performance_result.log #{lg.name}.performance_result.log"
+      puts "executing: #{cmd}"
+      `#{cmd}`
+    end
+  end
+  
+end
+
 def print_usage
-  puts "USAGE: ruby lcaws.rb [list][web-proxy][ssh-commands][stop-apps][start-apps]\n"+
+  puts "USAGE: ruby lcaws.rb [list][web-proxy][ssh-commands][stop-apps][start-apps][show-apps][stop-loadgens][start-loadgens][show-loadgens][scp-loadgen-results]\n"+
        "  There should be at least one command. If more than one command is specified then commands are executed in order"
 end
 
@@ -53,6 +93,11 @@ else
     print_web_proxy_config(ecc,instances) if arg == "web-proxy"
     print_ssh_commands(ecc,instances) if arg == "ssh-commands"
     stop_apps(ecc) if arg == "stop-apps"
-    start_apps(ecc) if arg == "start_apps"
+    start_apps(ecc) if arg == "start-apps"
+    show_apps(ecc,instances) if arg == "show-apps"
+    stop_loadgens(ecc) if arg == "stop-loadgens"
+    start_loadgens(ecc) if arg == "start-loadgens"
+    show_loadgens(ecc,instances) if arg == "show-loadgens"
+    scp_loadgen_results(ecc,instances) if arg == "scp-loadgen-results"
   end
 end
