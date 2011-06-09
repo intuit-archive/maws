@@ -102,6 +102,10 @@ class LcAws
     get_instances_by_name("gen", instances)
   end
 
+  def get_web_instances(instances = nil)
+    get_instances_by_name("web", instances)
+  end
+
   def get_instances_by_name(name_filter, instances = nil)
     all_instances = instances
     all_instances = get_instances if all_instances.nil?

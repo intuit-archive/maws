@@ -95,8 +95,19 @@ def open_loadgen_terminals(ecc, instances)
   end
 end
 
+def open_web_terminals(ecc, instances)
+  servers = ecc.get_web_instances(instances)
+  servers.each do |w|
+    if w.running?
+      cmd =  "ssh -i ~/mattinasi.pem root@#{w.dns_name}"
+      puts "opening terminal as: #{cmd}"
+      `scripts/it #{cmd}`
+    end
+  end
+end
+
 def print_usage
-  puts "USAGE: ruby lcaws.rb [list][web-proxy][ssh-commands][stop-apps][start-apps][show-apps][open-apps][stop-loadgens][start-loadgens][show-loadgens][open-loadgens][scp-loadgen-results]\n"+
+  puts "USAGE: ruby lcaws.rb [list][web-proxy][ssh-commands][stop-apps][start-apps][show-apps][open-apps][stop-loadgens][start-loadgens][show-loadgens][open-loadgens][open-webs][scp-loadgen-results]\n"+
        "  There should be at least one command. If more than one command is specified then commands are executed in order"
 end
 
@@ -121,6 +132,7 @@ else
     start_loadgens(ecc) if arg == "start-loadgens"
     show_loadgens(ecc,instances) if arg == "show-loadgens"
     open_loadgen_terminals(ecc, instances) if arg == "open-loadgens"
+    open_web_terminals(ecc, instances) if arg == "open-webs"
     scp_loadgen_results(ecc,instances) if arg == "scp-loadgen-results"
   end
 end
