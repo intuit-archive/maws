@@ -42,6 +42,17 @@ def show_apps(ecc,instances)
   end
 end
 
+def open_app_terminals(ecc, instances)
+  servers = ecc.get_app_instances(instances)
+  servers.each do |lg|
+    if lg.running?
+      cmd =  "ssh -i ~/mattinasi.pem root@#{lg.dns_name}"
+      puts "opening terminal as: #{cmd}"
+      `scripts/it #{cmd}`
+    end
+  end
+end
+
 def stop_loadgens(ecc)
   puts "Stopping all loadgen servers..."
   ecc.stop_loadgen_servers
@@ -85,7 +96,7 @@ def open_loadgen_terminals(ecc, instances)
 end
 
 def print_usage
-  puts "USAGE: ruby lcaws.rb [list][web-proxy][ssh-commands][stop-apps][start-apps][show-apps][stop-loadgens][start-loadgens][show-loadgens][scp-loadgen-results]\n"+
+  puts "USAGE: ruby lcaws.rb [list][web-proxy][ssh-commands][stop-apps][start-apps][show-apps][open-apps][stop-loadgens][start-loadgens][show-loadgens][open-loadgens][scp-loadgen-results]\n"+
        "  There should be at least one command. If more than one command is specified then commands are executed in order"
 end
 
@@ -105,6 +116,7 @@ else
     stop_apps(ecc) if arg == "stop-apps"
     start_apps(ecc) if arg == "start-apps"
     show_apps(ecc,instances) if arg == "show-apps"
+    open_app_terminals(ecc,instances) if arg == "open-apps"
     stop_loadgens(ecc) if arg == "stop-loadgens"
     start_loadgens(ecc) if arg == "start-loadgens"
     show_loadgens(ecc,instances) if arg == "show-loadgens"
