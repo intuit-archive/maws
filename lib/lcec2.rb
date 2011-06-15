@@ -127,7 +127,7 @@ class LcAws
       instances_to_stop << i.instance_id if i.running?
     end
     if instances_to_stop.size > 0
-      puts "Stopping instances: " + instances_to_start.inspect
+      puts "Stopping instances: " + instances_to_stop.inspect
       @ec2.stop_instances({:instance_id => instances_to_stop})
     else
       puts "No instances to stop"
