@@ -60,6 +60,10 @@ class Ec2Instance
     return @state == "running"
   end
   
+  def stopped?
+     return @state == "stopped"
+   end
+  
 end
 
 class LcAws
@@ -98,6 +102,10 @@ class LcAws
     get_instances_by_name("gen", instances)
   end
 
+  def get_web_instances(instances = nil)
+    get_instances_by_name("web", instances)
+  end
+
   def get_instances_by_name(name_filter, instances = nil)
     all_instances = instances
     all_instances = get_instances if all_instances.nil?
@@ -116,18 +124,28 @@ class LcAws
     instances_to_stop = Array.new
     
     instances.each do |i|
-      instances_to_stop << i.instance_id
+      instances_to_stop << i.instance_id if i.running?
     end
-    @ec2.stop_instances({:instance_id => instances_to_stop})
+    if instances_to_stop.size > 0
+      puts "Stopping instances: " + instances_to_stop.inspect
+      @ec2.stop_instances({:instance_id => instances_to_stop})
+    else
+      puts "No instances to stop"
+    end
   end
   
   def start_instances(instances)
     instances_to_start = Array.new
     
     instances.each do |i|
-      instances_to_start << i.instance_id
+      instances_to_start << i.instance_id if i.stopped?
     end
-    @ec2.start_instances({:instance_id => instances_to_start})
+    if instances_to_start.size > 0
+      puts "Starting instances: " + instances_to_start.inspect
+      @ec2.start_instances({:instance_id => instances_to_start})
+    else
+      puts "No instances to start"
+    end
   end
   
   def start_app_servers
@@ -152,7 +170,8 @@ class LcAws
   def print_proxy_members(instances = nil)
     apps = get_app_instances(instances)
     apps.each do |instance|
-      puts "BalancerMember http://#{a.private_dns_name}:8080" if instance.running?
+      puts "# #{instance.name}" if instance.running?
+      puts "BalancerMember http://#{instance.private_dns_name}:8080" if instance.running?
     end
   end
 

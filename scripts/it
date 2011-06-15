@@ -1,0 +1,9 @@
+#!/bin/bash
+
+if [[ $# == 0 ]]
+then  
+  echo "Usage: it "
+  exit
+fi
+
+osascript ./scripts/it.scpt $*
