@@ -1,4 +1,4 @@
 lcec2 is a new project to get some tooling on top of Amazon's EC2 for the Live Community system. It's more a learning ground than anything, and I expect it to turn into some more general utilities that might merit an OSS repo later...
 
-Required gems:
-gem install amazon-ec2
+Dependencies:
+amazon-ec2 gem
