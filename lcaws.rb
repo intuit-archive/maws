@@ -1,4 +1,4 @@
-require 'lib/lcec2'
+require './lib/lcec2'
 
 
 def list_instances(instances)
