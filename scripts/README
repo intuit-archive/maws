@@ -1,4 +1,4 @@
-the 'it' scripts are used to send command to iTerm, to make it easier to manage lots of hosts.  The lcaws tool uses these to open up tabs for each instance, and then
+the 'it' scripts are used to send command to iTerm, to make it easier to manage lots of hosts.  The lcec2 tool uses these to open up tabs for each instance, and then
 you can use iTerm to send commands to all of the tabs - a real weak implementation but better than nothing (and we don't have capistrano setup yet so it's all we have).
 
 

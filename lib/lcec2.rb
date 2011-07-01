@@ -66,10 +66,51 @@ class Ec2Instance
   
 end
 
-class LcAws
+class RdsInstance
+  attr_accessor :name,
+                :endpoint_address,
+                :endpoint_port,
+                :parameter_group,
+                :storage,
+                :instance_class,
+                :state
+                
+  def initialize(data)
+    #=> {"Engine"=>"mysql5.5", "PendingModifiedValues"=>nil, "BackupRetentionPeriod"=>"0", "DBInstanceStatus"=>"modifying", 
+    #    "DBParameterGroups"=>{"DBParameterGroup"=>{"ParameterApplyStatus"=>"pending-reboot", "DBParameterGroupName"=>"ttlc-mysql-5-5"}}, 
+    #    "DBInstanceIdentifier"=>"db1", "Endpoint"=>{"Port"=>"3306", "Address"=>"db1.cckovstulx2c.us-east-1.rds.amazonaws.com"}, 
+    #    "DBSecurityGroups"=>{"DBSecurityGroup"=>{"Status"=>"active", "DBSecurityGroupName"=>"default"}}, "PreferredBackupWindow"=>"07:30-08:00", 
+    #    "DBName"=>"cia_prod", "PreferredMaintenanceWindow"=>"fri:03:00-fri:03:30", "AvailabilityZone"=>"us-east-1c", 
+    #    "InstanceCreateTime"=>"2011-05-17T21:32:22.692Z", "AllocatedStorage"=>"300", "DBInstanceClass"=>"db.m1.large", "MasterUsername"=>"dbuser"} 
+        
+    @name = data['DBInstanceIdentifier']
+    @endpoint_address = data['Endpoint']['Address'] if data['Endpoint']
+    @endpoint_port = data['Endpoint']['Port'] if data['Endpoint']
+    @parameter_group = data['DBParameterGroups']['DBParameterGroup']['DBParameterGroupName']
+    @storage = data['AllocatedStorage'].to_i if data['AllocatedStorage']
+    @instance_class = data['DBInstanceClass']
+    @state = data['DBInstanceStatus']
+    
+  end
+  
+  def to_s
+    str = 
+    "Name: #{@name}\n" +
+    "State: #{@state}\n" +
+    "Instance Type: #{@instance_class}\n" +
+    "Storage: #{@storage}GB\n" +
+    "Parameter Group: #{@parameter_group}\n" +
+    "Endpoint: #{@endpoint_address}\n" +
+    "Port: #{@endpoint_port}\n"
+  end
+end
 
+class LcAws
+  attr_accessor :ec2, :rds
+  
   def initialize
     @ec2 = AWS::EC2::Base.new(:access_key_id => ACCESS_KEY_ID, :secret_access_key => SECRET_ACCESS_KEY)
+    @rds = AWS::RDS::Base.new(:access_key_id => ACCESS_KEY_ID, :secret_access_key => SECRET_ACCESS_KEY)
   end
 
   #
@@ -92,6 +133,16 @@ class LcAws
       end
     end   
     all_instances 
+  end
+  
+  def get_rds_instances
+    all_instances = Array.new
+    db_instances = @rds.describe_db_instances["DescribeDBInstancesResult"]["DBInstances"]["DBInstance"]
+    db_instances.each do |db_data|
+      new_instance = RdsInstance.new(db_data)
+      all_instances << new_instance
+    end
+    all_instances
   end
   
   def get_app_instances(instances = nil)
@@ -177,7 +228,11 @@ class LcAws
 
   def self.print_ssh_commands(instances)
     instances.each do |instance|
-      puts "ssh -i #{instance.keyname}.pem root@#{instance.dns_name}"  if instance.running?
+      if instance.keyname == ""
+        puts "ssh -i intuit-baseline.pem ea@#{instance.dns_name}"  if instance.running?
+      else
+        puts "ssh -i #{instance.keyname}.pem root@#{instance.dns_name}"  if instance.running?
+      end
     end
   end
   

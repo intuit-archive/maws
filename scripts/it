@@ -2,7 +2,7 @@
 
 if [[ $# == 0 ]]
 then  
-  echo "Usage: it "
+  echo "Usage: it params_for_applescript"
   exit
 fi
 
