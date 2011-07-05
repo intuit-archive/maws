@@ -158,6 +158,30 @@ def open_web_terminals(ecc, instances)
   end
 end
 
+
+#set :community, "baseline"
+#  role :app, "c00000055553.corp.intuit.net","c00000055552.corp.intuit.net"
+#  role :service, "c00000055558.corp.intuit.net"
+
+def create_envfile(ecc, instances)
+  #this will create the capistrano envfile for the current EC2 environment so we can send commands
+  web = ecc.get_web_instances
+  app = ecc.get_app_instances
+  puts "set :community, 'amazon_perf'"
+  web_str = ""
+  web.each_with_index do |i, index|
+     web_str = web_str + "\"" + i.private_dns_name + "\"" 
+  end
+  app_str = ""
+  app.each_with_index do |i, index|
+     app_str = app_str + "\"" + i.private_dns_name + "\""
+  end
+
+  puts "role :web, " + web_str
+  puts "role :app, " + app_str
+end
+
+
 def print_usage
   puts "USAGE: ruby lcaws.rb [list][web-proxy][ssh-commands][stop-apps][start-apps][show-apps][open-apps][stop-loadgens][start-loadgens][show-loadgens][open-loadgens][open-webs][show-dbs][scp-loadgen-results]\n"+
        "  There should be at least one command. If more than one command is specified then commands are executed in order"
@@ -187,5 +211,6 @@ else
     open_web_terminals(ecc, instances) if arg == "open-webs"
     scp_loadgen_results(ecc,instances) if arg == "scp-loadgen-results"
     show_dbs(ecc) if arg == "show-dbs"
+    create_envfile(ecc, instances) if arg=="create_envfile"
   end
 end
