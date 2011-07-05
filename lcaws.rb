@@ -40,10 +40,11 @@ def print_web_proxy_config(ecc,instances, apps_per_web=6)
   webs = get_web_proxy_config(ecc, instances, apps_per_web)
   # now print the elements of the webs arrays
   webs.each_with_index do |w,index|
-    puts "\nWeb#{index+1} Config:"
+    puts "#Web#{index+1}\n# Proxy Balancer: add app-server hosts here to include them in this web server's proxy balancer\n#\n<Proxy balancer://turbotax_cluster>\n"
     w.each do |line|
       puts " " + line
     end
+    puts "</Proxy>"
   end
 end
 
