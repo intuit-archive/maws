@@ -1,7 +1,15 @@
+#!/usr/local/bin/ruby
+
 require './lib/lcec2'
+require './lib/cap'
+
+#Configuration
+#place where the capistrano env files go
+
+$capistrano_envfile_dir = "../deploy/envfiles"
+$capistrano_upload_dir = "../deploy/uploads"
 
 PEM_PATH = ENV["AWS_PEM_PATH"]
-
 
 def list_instances(instances)
   instances.each_with_index do |i, index|
@@ -77,7 +85,7 @@ def show_apps(ecc,instances)
   puts "Current App servers:"
   apps = ecc.get_app_instances(instances)
   apps.each do |app|
-    puts app.name + " : " + app.state
+        puts app.name + " : " + app.state
   end
 end
 
@@ -159,32 +167,39 @@ def open_web_terminals(ecc, instances)
   end
 end
 
-
-#set :community, "baseline"
-#  role :app, "c00000055553.corp.intuit.net","c00000055552.corp.intuit.net"
-#  role :service, "c00000055558.corp.intuit.net"
-
-def create_envfile(ecc, instances)
+def create_envfile(ecc, instances, community = "amazon-perf")
   #this will create the capistrano envfile for the current EC2 environment so we can send commands
+  #prep the envfile
+  puts "Creating envfile for #{community}:"
+  envfile_name = "#{$capistrano_envfile_dir}/#{community}.rb"
+  File.delete(envfile_name) if File.exists?( envfile_name)
+  #TODO: some exception handling here cause its good to the last drop....
+  envfile = File.new(envfile_name, "w")
   web = ecc.get_web_instances
   app = ecc.get_app_instances
-  puts "set :community, 'amazon_perf'"
+  
+  
+  envfile.puts "set :community, '#{community}'"
   web_str = ""
   web.each_with_index do |i, index|
-     web_str = web_str + "\"" + i.private_dns_name + "\"" 
+     web_str = web_str + "\"" + i.private_dns_name + "\"," unless i.private_dns_name.nil?
   end
+  web_str.chomp!(",")
   app_str = ""
   app.each_with_index do |i, index|
-     app_str = app_str + "\"" + i.private_dns_name + "\""
+     app_str = app_str + "\"" + i.private_dns_name + "\"," unless i.private_dns_name.nil?
   end
-
-  puts "role :web, " + web_str
-  puts "role :app, " + app_str
+  app_str.chomp!(",")
+  envfile.puts "role :web, " + web_str
+  envfile.puts "role :app, " + app_str
+  envfile.close
+  puts "Finished creating envfile in #{envfile_name}"
+  puts `cat #{envfile_name}`
 end
 
 
 def print_usage
-  puts "USAGE: ruby lcaws.rb [list][web-proxy][ssh-commands][stop-apps][start-apps][show-apps][open-apps][stop-loadgens][start-loadgens][show-loadgens][open-loadgens][open-webs][show-dbs][scp-loadgen-results]\n"+
+  puts "USAGE: ruby lcaws.rb [list][web-proxy][ssh-commands][stop-apps][start-apps][show-apps][open-apps][stop-loadgens][start-loadgens][show-loadgens][open-loadgens][open-webs][show-dbs][scp-loadgen-results][create-envfile]\n"+
        "  There should be at least one command. If more than one command is specified then commands are executed in order"
 end
 
@@ -212,6 +227,7 @@ else
     open_web_terminals(ecc, instances) if arg == "open-webs"
     scp_loadgen_results(ecc,instances) if arg == "scp-loadgen-results"
     show_dbs(ecc) if arg == "show-dbs"
-    create_envfile(ecc, instances) if arg=="create_envfile"
+    create_envfile(ecc, instances) if arg == "create-envfile"
+    check_all_ok(ecc, instances) if arg == "check-all-ok"
   end
 end
