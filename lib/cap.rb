@@ -21,7 +21,7 @@
 #we will need to pass the community in the future. Default is set for dev purposes.
 
 def check_all_ok(ecc, instances, community = 'amazon-perf')
-  cap("control:stat_unicorn", "community")
+  cap("control:stat_unicorn", community)
 end
 
 def restart_apache(ecc, instances, community = 'amazon-perf')
@@ -35,9 +35,14 @@ end
 def start_memcached(ecc, instances, community = 'amazon-perf')
   cap "control:start_memcached, community"
 end
+
+def hostname(ecc, instances, community = 'amazon-perf', server = nil)
+  cap("control:hostname", community, "ip-10-2-250-145.ec2.internal")
+end
  
 private 
   
-def cap(command, community)
-  puts `cd ../deploy; cap #{command} deploy_env=#{community}`
+def cap(command, community, server = nil)
+  server.nil? ? server = "" : server = "HOSTS=#{server}"
+  puts `cd ../deploy; cap #{server}  #{command} deploy_env=#{community}`
 end

@@ -178,7 +178,6 @@ def create_envfile(ecc, instances, community = "amazon-perf")
   web = ecc.get_web_instances
   app = ecc.get_app_instances
   
-  
   envfile.puts "set :community, '#{community}'"
   web_str = ""
   web.each_with_index do |i, index|
@@ -229,5 +228,6 @@ else
     show_dbs(ecc) if arg == "show-dbs"
     create_envfile(ecc, instances) if arg == "create-envfile"
     check_all_ok(ecc, instances) if arg == "check-all-ok"
+    hostname(ecc, instances) if arg == "hostname"
   end
 end
