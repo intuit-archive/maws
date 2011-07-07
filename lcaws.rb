@@ -44,6 +44,21 @@ def get_web_proxy_config(ecc, instances, apps_per_web=6)
   return webs
 end
 
+def create_web_proxy_config( ecc, instances, apps_per_web=6)
+  webs = get_web_proxy_config(ecc, instances, apps_per_web)
+  webs.each do |w, index|
+       #$capistrano_upload_dir: root directory of capistrano uploads 
+       #server_name_dir: directory under upload_dir where an individual server will get its 'stuff', created when the ec2 info is parsed
+       #end location of file: Full path of where the file will go on the remote server
+       #file_name: the name of the file you are creating and will get uploaded
+       server_name_dir = index.primary_dns_name
+       proxy_file = "#{$capistrano_upload_dir}/#{primary_dns_name}/#{final_path}/#{file_name}"
+       File.delete(proxy_file) if File.exists?(proxy_file)
+       #TODO: some exception handling here cause its good to the last drop....
+       envfile = File.new(proxy_file, "w")
+  end
+end
+
 def print_web_proxy_config(ecc,instances, apps_per_web=6)
   webs = get_web_proxy_config(ecc, instances, apps_per_web)
   # now print the elements of the webs arrays

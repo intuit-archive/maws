@@ -36,8 +36,9 @@ def start_memcached(ecc, instances, community = 'amazon-perf')
   cap "control:start_memcached, community"
 end
 
+#example of calling hostname on a specific server. The community is uneccesary if calling by server name.
 def hostname(ecc, instances, community = 'amazon-perf', server = nil)
-  cap("control:hostname", community, "ip-10-2-250-145.ec2.internal")
+  cap("control:hostname", community, server)
 end
  
 private 
