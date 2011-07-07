@@ -11,7 +11,7 @@ def list_instances(instances)
   end
 end
 
-def get_web_proxy_config(ecc, instances, apps_per_web=6)
+def get_web_proxy_config(ecc, instances, apps_per_web=5)
   ws_num = 0
   app_count = 0
   webs = Array.new
@@ -36,7 +36,7 @@ def get_web_proxy_config(ecc, instances, apps_per_web=6)
   return webs
 end
 
-def print_web_proxy_config(ecc,instances, apps_per_web=6)
+def print_web_proxy_config(ecc,instances, apps_per_web=5)
   webs = get_web_proxy_config(ecc, instances, apps_per_web)
   # now print the elements of the webs arrays
   webs.each_with_index do |w,index|
