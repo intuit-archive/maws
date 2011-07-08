@@ -145,25 +145,27 @@ class LcAws
     all_instances
   end
   
-  def get_app_instances(instances = nil)
-    get_instances_by_name("app", instances)
+  def get_app_instances(instances = nil, state = nil)
+    get_instances_by_name("app", instances, state)
   end
 
-  def get_loadgen_instances(instances = nil)
-    get_instances_by_name("gen", instances)
+  def get_loadgen_instances(instances = nil, state = nil)
+    get_instances_by_name("gen", instances, state)
   end
 
-  def get_web_instances(instances = nil)
-    get_instances_by_name("web", instances)
+  def get_web_instances(instances = nil, state = nil)
+    get_instances_by_name("web", instances, state)
   end
 
-  def get_instances_by_name(name_filter, instances = nil)
+  def get_instances_by_name(name_filter, instances = nil, state = nil)
     all_instances = instances
     all_instances = get_instances if all_instances.nil?
     filtered_instances = Array.new
     all_instances.each do |instance|
-      # check if the name matches
-      filtered_instances << instance if instance.name.include? name_filter
+      # check if the name matches AND the state matches the filter provided
+      if instance.name.include?(name_filter) && (state.nil? || instance.state == state)
+        filtered_instances << instance 
+      end
     end
     filtered_instances
   end

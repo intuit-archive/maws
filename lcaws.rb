@@ -6,10 +6,13 @@ require './lib/cap'
 #Configuration
 #place where the capistrano env files go
 
-$capistrano_envfile_dir = "../deploy/envfiles"
-$capistrano_upload_dir = "../deploy/uploads"
+CAPISTRANO_ENVFILE_DIR = "../deploy/envfiles"
+CAPISTRANO_UPLOAD_DIR = "../deploy/uploads"
 
 PEM_PATH = ENV["AWS_PEM_PATH"]
+
+APPS_PER_WEB = 5
+
 
 def list_instances(instances)
   instances.each_with_index do |i, index|
@@ -19,55 +22,74 @@ def list_instances(instances)
   end
 end
 
-def get_web_proxy_config(ecc, instances, apps_per_web=5)
-  ws_num = 0
-  app_count = 0
-  webs = Array.new
 
-  apps = ecc.get_app_instances(instances)
+def get_web_proxy_config(ecc, instances)
+  ws_num = 1
+  app_count = 0
+  proxy_config = Array.new
+  
+  apps = ecc.get_app_instances(instances, "running")
+  webs = ecc.get_web_instances(instances, "running")
+
+  # TODO: remove non-running instances from apps and webs
   
   # sort by the number appended to the name
   apps.sort! {|a,b| a.name[3..-1].to_i <=> b.name[3..-1].to_i}
+  webs.sort! {|a,b| a.name[3..-1].to_i <=> b.name[3..-1].to_i}
   
-  apps.each do |instance|
-    if instance.running?
-      webs[ws_num] = Array.new if webs[ws_num].nil?
-      webs[ws_num] << "# #{instance.name} \n BalancerMember http://#{instance.private_dns_name}:8080"
-      app_count += 1
-    end
-    if app_count >= apps_per_web
-      # on to the next web server
-      ws_num += 1
-      app_count = 0
+  if webs.size * APPS_PER_WEB != apps.size
+    puts "Environment Imbalance Error: there must be #{APPS_PER_WEB} app servers for each web server. Currently there are #{webs.size} webs and #{apps.size} apps"
+    return nil
+  end
+  
+  app_index = 0
+
+  webs.each_with_index do |web_instance, index|
+    proxy_config[index] = Hash.new
+    proxy_config[index][:name] = web_instance.name
+    proxy_config[index][:private_dns] = web_instance.private_dns_name
+    
+    proxy_config[index][:apps] = Array.new
+    APPS_PER_WEB.times do
+      proxy_config[index][:apps] << "# #{apps[app_index].name} \n BalancerMember http://#{apps[app_index].private_dns_name}:8080"
+      app_index += 1
     end
   end
-  return webs
+
+  return proxy_config
 end
 
-def create_web_proxy_config( ecc, instances, apps_per_web=6)
-  webs = get_web_proxy_config(ecc, instances, apps_per_web)
-  webs.each do |w, index|
-       #$capistrano_upload_dir: root directory of capistrano uploads 
-       #server_name_dir: directory under upload_dir where an individual server will get its 'stuff', created when the ec2 info is parsed
-       #end location of file: Full path of where the file will go on the remote server
-       #file_name: the name of the file you are creating and will get uploaded
-       server_name_dir = index.primary_dns_name
-       proxy_file = "#{$capistrano_upload_dir}/#{primary_dns_name}/#{final_path}/#{file_name}"
-       File.delete(proxy_file) if File.exists?(proxy_file)
-       #TODO: some exception handling here cause its good to the last drop....
-       envfile = File.new(proxy_file, "w")
+def create_web_proxy_config( ecc, instances)
+  unless File.exists?(CAPISTRANO_UPLOAD_DIR)
+    puts "Capistrano Upload Directory must already exist: #{CAPISTRANO_UPLOAD_DIR}"
+    return
   end
-end
-
-def print_web_proxy_config(ecc,instances, apps_per_web=5)
-  webs = get_web_proxy_config(ecc, instances, apps_per_web)
-  # now print the elements of the webs arrays
-  webs.each_with_index do |w,index|
-    puts "#Web#{index+1}\n# Proxy Balancer: add app-server hosts here to include them in this web server's proxy balancer\n#\n<Proxy balancer://turbotax_cluster>\n"
-    w.each do |line|
-      puts " " + line
+  
+  webs = get_web_proxy_config(ecc, instances)
+  webs.each do |w|
+    #CAPISTRANO_UPLOAD_DIR: root directory of capistrano uploads 
+    #server_name: directory under upload_dir where an individual server will get its 'stuff', created when the ec2 info is parsed
+    #file_name: the name of the file you are creating and will get uploaded
+    server_name = w[:private_dns]
+    file_name = "proxy.conf"
+    file_dir = "#{CAPISTRANO_UPLOAD_DIR}/#{server_name}"
+    proxy_file_name = "#{file_dir}/#{file_name}"
+    
+    begin
+      File.delete(proxy_file_name) if File.exists?(proxy_file_name)
+      Dir.mkdir(file_dir) unless File.exists?(file_dir)
+      
+      proxy_file = File.new(proxy_file_name, "w")
+      proxy_file.puts "# #{w[:name]}\n# Proxy Balancer: The app servers below will get requests from this web server, fishizzle!\n#\n<Proxy balancer://turbotax_cluster>\n"
+      w[:apps].each do |line|
+        proxy_file.puts " " + line
+      end
+      proxy_file.puts "</Proxy>"
+      proxy_file.close
+      puts `cat #{proxy_file_name}`
+    rescue => ex
+      puts "Exception writing file: #{ex.inspect}"
     end
-    puts "</Proxy>"
   end
 end
 
@@ -186,7 +208,7 @@ def create_envfile(ecc, instances, community = "amazon-perf")
   #this will create the capistrano envfile for the current EC2 environment so we can send commands
   #prep the envfile
   puts "Creating envfile for #{community}:"
-  envfile_name = "#{$capistrano_envfile_dir}/#{community}.rb"
+  envfile_name = "#{CAPISTRANO_ENVFILE_DIR}/#{community}.rb"
   File.delete(envfile_name) if File.exists?( envfile_name)
   #TODO: some exception handling here cause its good to the last drop....
   envfile = File.new(envfile_name, "w")
@@ -228,7 +250,6 @@ else
 
   ARGV.each do |arg|
     list_instances(instances) if arg == "list"
-    print_web_proxy_config(ecc,instances) if arg == "web-proxy"
     print_ssh_commands(ecc,instances) if arg == "ssh-commands"
     stop_apps(ecc) if arg == "stop-apps"
     start_apps(ecc) if arg == "start-apps"
@@ -244,5 +265,6 @@ else
     create_envfile(ecc, instances) if arg == "create-envfile"
     check_all_ok(ecc, instances) if arg == "check-all-ok"
     hostname(ecc, instances) if arg == "hostname"
+    create_web_proxy_config(ecc,instances) if arg == "create-web-proxy"
   end
 end

@@ -20,24 +20,24 @@
 
 #we will need to pass the community in the future. Default is set for dev purposes.
 
-def check_all_ok(ecc, instances, community = 'amazon-perf')
+def check_all_ok(community = 'amazon-perf')
   cap("control:stat_unicorn", community)
 end
 
-def restart_apache(ecc, instances, community = 'amazon-perf')
+def restart_apache(community = 'amazon-perf')
   cap "control:restart_apache, community"
 end
 
-def restart_unicorn(ecc, instances, community = 'amazon-perf')
+def restart_unicorn(community = 'amazon-perf')
   cap "control:restart_unicorn, community"
 end
 
-def start_memcached(ecc, instances, community = 'amazon-perf')
+def start_memcached(community = 'amazon-perf')
   cap "control:start_memcached, community"
 end
 
 #example of calling hostname on a specific server. The community is uneccesary if calling by server name.
-def hostname(ecc, instances, community = 'amazon-perf', server = nil)
+def hostname(community = 'amazon-perf', server = nil)
   cap("control:hostname", community, server)
 end
  
