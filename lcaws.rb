@@ -14,7 +14,7 @@ PEM_PATH = ENV["AWS_PEM_PATH"]
 APPS_PER_WEB = 5
 
 
-def list_instances(instances)
+def list_instances(ecc, instances, args)
   instances.each_with_index do |i, index|
     puts "**** INSTANCE #{index} ****"
     puts i.to_s
@@ -23,7 +23,7 @@ def list_instances(instances)
 end
 
 
-def get_web_proxy_config(ecc, instances)
+def get_web_proxy_config(ecc, instances, args)
   ws_num = 1
   app_count = 0
   proxy_config = Array.new
@@ -59,13 +59,13 @@ def get_web_proxy_config(ecc, instances)
   return proxy_config
 end
 
-def create_web_proxy_config( ecc, instances)
+def create_web_proxy_config(ecc, instances, args)
   unless File.exists?(CAPISTRANO_UPLOAD_DIR)
     puts "Capistrano Upload Directory must already exist: #{CAPISTRANO_UPLOAD_DIR}"
     return
   end
   
-  webs = get_web_proxy_config(ecc, instances)
+  webs = get_web_proxy_config(ecc, instances, args)
   webs.each do |w|
     #CAPISTRANO_UPLOAD_DIR: root directory of capistrano uploads 
     #server_name: directory under upload_dir where an individual server will get its 'stuff', created when the ec2 info is parsed
@@ -93,12 +93,12 @@ def create_web_proxy_config( ecc, instances)
   end
 end
 
-def print_database_configs(ecc, instances)
+def print_database_configs(ecc, instances, args)
   dbs = ecc.get_rds_instances
   
 end
 
-def print_ssh_commands(ecc,instances)
+def print_ssh_commands(ecc, instances, args)
   puts "SSH commands (apps)"
   LcAws.print_ssh_commands(ecc.get_app_instances(instances))
 
@@ -106,27 +106,26 @@ def print_ssh_commands(ecc,instances)
   LcAws.print_ssh_commands(ecc.get_loadgen_instances(instances))
 end
 
-def stop_apps(ecc)
+def stop_apps(ecc, instances, args)
   puts "Stopping all app servers..."
   ecc.stop_app_servers
   puts "Done."
 end
 
-def start_apps(ecc)
+def start_apps(ecc, instances, args)
   puts "Starting all app servers..."
   ecc.start_app_servers
   puts "Done."
 end
 
-def show_apps(ecc,instances)
-  puts "Current App servers:"
+def show_apps(ecc, instances, args)
   apps = ecc.get_app_instances(instances)
   apps.each do |app|
         puts app.name + " : " + app.state
   end
 end
 
-def open_app_terminals(ecc, instances)
+def open_app_terminals(ecc, instances, args)
   servers = ecc.get_app_instances(instances)
   servers.each do |app|
     if app.running?
@@ -142,19 +141,19 @@ def open_app_terminals(ecc, instances)
   end
 end
 
-def stop_loadgens(ecc)
+def stop_loadgens(ecc, instances, args)
   puts "Stopping all loadgen servers..."
   ecc.stop_loadgen_servers
   puts "Done."
 end
 
-def start_loadgens(ecc)
+def start_loadgens(ecc, instances, args)
   puts "Starting all loadgens servers..."
   ecc.start_loadgen_servers
   puts "Done."
 end
 
-def show_loadgens(ecc,instances)
+def show_loadgens(ecc, instances, args)
   puts "Current loadgens servers:"
   servers = ecc.get_loadgen_instances(instances)
   servers.each do |lg|
@@ -162,7 +161,7 @@ def show_loadgens(ecc,instances)
   end
 end
 
-def show_dbs(ecc)
+def show_dbs(ecc, instances, args)
   puts "Current Database Instances:"
   dbs = ecc.get_rds_instances
   dbs.each do |db|
@@ -171,7 +170,7 @@ def show_dbs(ecc)
   end
 end
 
-def scp_loadgen_results(ecc, instances)
+def scp_loadgen_results(ecc, instances, args)
   servers = ecc.get_loadgen_instances(instances)
   servers.each do |lg|
     if lg.running?
@@ -182,7 +181,7 @@ def scp_loadgen_results(ecc, instances)
   end
 end
 
-def open_loadgen_terminals(ecc, instances)
+def open_loadgen_terminals(ecc, instances, args)
   servers = ecc.get_loadgen_instances(instances)
   servers.each do |lg|
     if lg.running?
@@ -193,7 +192,7 @@ def open_loadgen_terminals(ecc, instances)
   end
 end
 
-def open_web_terminals(ecc, instances)
+def open_web_terminals(ecc, instances, args)
   servers = ecc.get_web_instances(instances)
   servers.each do |w|
     if w.running?
@@ -204,7 +203,8 @@ def open_web_terminals(ecc, instances)
   end
 end
 
-def create_envfile(ecc, instances, community = "amazon-perf")
+def create_envfile(ecc, instances, args)
+  args[1].nil? ? community = "amazon-perf" : community = args[1]
   #this will create the capistrano envfile for the current EC2 environment so we can send commands
   #prep the envfile
   puts "Creating envfile for #{community}:"
@@ -235,8 +235,9 @@ end
 
 
 def print_usage
-  puts "USAGE: ruby lcaws.rb [list][web-proxy][ssh-commands][stop-apps][start-apps][show-apps][open-apps][stop-loadgens][start-loadgens][show-loadgens][open-loadgens][open-webs][show-dbs][scp-loadgen-results][create-envfile]\n"+
-       "  There should be at least one command. If more than one command is specified then commands are executed in order"
+#   puts self.public_methods.sort
+#  puts "USAGE: ruby lcaws.rb [list][web-proxy][ssh-commands][stop-apps][start-apps][show-apps][open-apps][stop-loadgens][start-loadgens][show-loadgens][open-loadgens][open-webs][show-dbs][scp-loadgen-results][create-envfile]\n"+
+ #      "  There should be at least one command. If more than one command is specified then commands are executed in order"
 end
 
 ###############
@@ -248,23 +249,28 @@ else
   ecc = LcAws.new
   instances = ecc.get_instances
 
-  ARGV.each do |arg|
-    list_instances(instances) if arg == "list"
-    print_ssh_commands(ecc,instances) if arg == "ssh-commands"
-    stop_apps(ecc) if arg == "stop-apps"
-    start_apps(ecc) if arg == "start-apps"
-    show_apps(ecc,instances) if arg == "show-apps"
-    open_app_terminals(ecc,instances) if arg == "open-apps"
-    stop_loadgens(ecc) if arg == "stop-loadgens"
-    start_loadgens(ecc) if arg == "start-loadgens"
-    show_loadgens(ecc,instances) if arg == "show-loadgens"
-    open_loadgen_terminals(ecc, instances) if arg == "open-loadgens"
-    open_web_terminals(ecc, instances) if arg == "open-webs"
-    scp_loadgen_results(ecc,instances) if arg == "scp-loadgen-results"
-    show_dbs(ecc) if arg == "show-dbs"
-    create_envfile(ecc, instances) if arg == "create-envfile"
-    check_all_ok(ecc, instances) if arg == "check-all-ok"
-    hostname(ecc, instances) if arg == "hostname"
-    create_web_proxy_config(ecc,instances) if arg == "create-web-proxy"
-  end
+
+send(ARGV[0],ecc,instances, ARGV) 
+
+#  ARGV.each do |arg|
+#    list_instances(instances) if arg == "list"
+#    print_ssh_commands(ecc,instances) if arg == "ssh-commands"
+#    stop_apps(ecc) if arg == "stop-apps"
+#    start_apps(ecc) if arg == "start-apps"
+#    show_apps(ecc,instances) if arg == "show-apps"
+#    open_app_terminals(ecc,instances) if arg == "open-apps"
+#    stop_loadgens(ecc) if arg == "stop-loadgens"
+#    start_loadgens(ecc) if arg == "start-loadgens"
+#    show_loadgens(ecc,instances) if arg == "show-loadgens"
+#    open_loadgen_terminals(ecc, instances) if arg == "open-loadgens"
+#    open_web_terminals(ecc, instances) if arg == "open-webs"
+#    scp_loadgen_results(ecc,instances) if arg == "scp-loadgen-results"
+#    show_dbs(ecc) if arg == "show-dbs"
+#    create_envfile(ecc, instances) if arg == "create-envfile"
+#    check_all_ok(ecc, instances) if arg == "check-all-ok"
+#    hostname(ecc, instances) if arg == "hostname"
+#    create_web_proxy_config(ecc,instances) if arg == "create-web-proxy"
+#    upload_web_proxy(ecc, instances) if arg == "upload_web_proxy"
+#    restart_web_servers(ecc, instances) if arg == "restart-web_servers"
+#  end
 end
