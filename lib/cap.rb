@@ -20,26 +20,44 @@
 
 #we will need to pass the community in the future. Default is set for dev purposes.
 
-def check_all_ok(community = 'amazon-perf')
+def check_all_ok(ecc, instances, args)
+  args[1].nil? ? community = "amazon-perf" : community = args[1]
   cap("control:stat_unicorn", community)
 end
 
-def restart_apache(community = 'amazon-perf')
-  cap "control:restart_apache, community"
+def restart_apache(ecc, instances, args)
+  args[1].nil? ? community = "amazon-perf" : community = args[1]
+  cap "control:restart_apache", community
 end
 
-def restart_unicorn(community = 'amazon-perf')
-  cap "control:restart_unicorn, community"
+def restart_unicorn(ecc, instances, args)
+  args[1].nil? ? community = "amazon-perf" : community = args[1]
+  cap "control:restart_unicorn", community
 end
 
-def start_memcached(community = 'amazon-perf')
-  cap "control:start_memcached, community"
+def start_memcached(ecc, instances, args)
+  args[1].nil? ? community = "amazon-perf" : community = args[1]
+  cap "control:start_memcached", community
 end
 
 #example of calling hostname on a specific server. The community is uneccesary if calling by server name.
-def hostname(community = 'amazon-perf', server = nil)
+def hostname(ecc, instances, args)
+  args[1].nil? ? community = "amazon-perf" : community = args[1]
+  args[2].nil? ? server = nil : server = args[2]
   cap("control:hostname", community, server)
 end
+
+def upload_vhost(ecc, instances)
+   #get active web servers...
+   web =  ecc.get_web_instances(instances, "running")
+   #individually upload vhost files
+   web.each do |x|
+      name = x.private_dns_name
+      `scp ../deploy/upload/#{name}/proxy.conf #{name}:.` 
+   end
+   cap "control:move_vhost_and_restart", "amazon-perf"
+end
+   
  
 private 
   

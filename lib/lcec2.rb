@@ -30,7 +30,7 @@ class Ec2Instance
     @monitoring = data['monitoring']
     @state = data['instanceState']['name']
     @keyname = data['keyName']
-    @tags = data['tagSet']['item']
+    @tags = data['tagSet']['item'] unless data['tagSet'].nil?
   end
   
   def to_s
@@ -50,9 +50,11 @@ class Ec2Instance
   end
   
   def name
-    @tags.each do |t|
-      return t['value'] if t['key'] == 'Name'
-    end
+    unless @tags.nil?
+      @tags.each do |t|
+        return t['value'] if t['key'] == 'Name'
+      end
+    end 
     ""
   end
   

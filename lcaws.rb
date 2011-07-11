@@ -7,7 +7,7 @@ require './lib/cap'
 #place where the capistrano env files go
 
 CAPISTRANO_ENVFILE_DIR = "../deploy/envfiles"
-CAPISTRANO_UPLOAD_DIR = "../deploy/uploads"
+CAPISTRANO_UPLOAD_DIR = "../deploy/upload"
 
 PEM_PATH = ENV["AWS_PEM_PATH"]
 
@@ -91,6 +91,9 @@ def create_web_proxy_config(ecc, instances, args)
       puts "Exception writing file: #{ex.inspect}"
     end
   end
+  create_envfile(ecc, instances, "amazon-perf")
+  upload_vhost(ecc, instances)
+  cap "control:restart_apache", "amazon-perf"
 end
 
 def print_database_configs(ecc, instances, args)
@@ -248,29 +251,5 @@ if ARGV.size < 1
 else
   ecc = LcAws.new
   instances = ecc.get_instances
-
-
-send(ARGV[0],ecc,instances, ARGV) 
-
-#  ARGV.each do |arg|
-#    list_instances(instances) if arg == "list"
-#    print_ssh_commands(ecc,instances) if arg == "ssh-commands"
-#    stop_apps(ecc) if arg == "stop-apps"
-#    start_apps(ecc) if arg == "start-apps"
-#    show_apps(ecc,instances) if arg == "show-apps"
-#    open_app_terminals(ecc,instances) if arg == "open-apps"
-#    stop_loadgens(ecc) if arg == "stop-loadgens"
-#    start_loadgens(ecc) if arg == "start-loadgens"
-#    show_loadgens(ecc,instances) if arg == "show-loadgens"
-#    open_loadgen_terminals(ecc, instances) if arg == "open-loadgens"
-#    open_web_terminals(ecc, instances) if arg == "open-webs"
-#    scp_loadgen_results(ecc,instances) if arg == "scp-loadgen-results"
-#    show_dbs(ecc) if arg == "show-dbs"
-#    create_envfile(ecc, instances) if arg == "create-envfile"
-#    check_all_ok(ecc, instances) if arg == "check-all-ok"
-#    hostname(ecc, instances) if arg == "hostname"
-#    create_web_proxy_config(ecc,instances) if arg == "create-web-proxy"
-#    upload_web_proxy(ecc, instances) if arg == "upload_web_proxy"
-#    restart_web_servers(ecc, instances) if arg == "restart-web_servers"
-#  end
+  send(ARGV[0],ecc,instances, ARGV) 
 end
