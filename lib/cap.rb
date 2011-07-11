@@ -55,7 +55,7 @@ def upload_vhost(ecc, instances)
       name = x.private_dns_name
       `scp ../deploy/upload/#{name}/proxy.conf #{name}:.` 
    end
-   cap "control:move_vhost_and_restart", "amazon-perf"
+   cap "control:move_vhost", "amazon-perf"
 end
    
  
