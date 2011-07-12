@@ -11,7 +11,7 @@ CAPISTRANO_UPLOAD_DIR = "../deploy/uploads"
 
 PEM_PATH = ENV["AWS_PEM_PATH"]
 
-APPS_PER_WEB = 5
+APPS_PER_WEB = 6
 
 
 def list_instances(instances)
@@ -197,7 +197,7 @@ def open_web_terminals(ecc, instances)
   servers = ecc.get_web_instances(instances)
   servers.each do |w|
     if w.running?
-      cmd =  "ssh -i ~/mattinasi.pem root@#{w.dns_name}"
+      cmd =  "ssh -i intuit-baseline.pem ea@#{w.dns_name}"
       puts "opening terminal as: #{cmd}"
       `scripts/it #{cmd}`
     end

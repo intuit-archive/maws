@@ -6,6 +6,11 @@ require 'AWS'
 ACCESS_KEY_ID = ENV["AWS_ACCESS_KEY_ID"]
 SECRET_ACCESS_KEY = ENV["AWS_SECRET_ACCESS_KEY"] 
 
+
+DEFAULT_WEB_AMI = "ami-98d014f1"
+DEFAULT_APP_AMI = "ami-da4fb4b3"
+
+
 class Ec2Instance
   attr_accessor :instance_id,
                 :dns_name,
@@ -30,7 +35,7 @@ class Ec2Instance
     @monitoring = data['monitoring']
     @state = data['instanceState']['name']
     @keyname = data['keyName']
-    @tags = data['tagSet']['item']
+    @tags = data['tagSet']['item'] unless data['tagSet'].nil?
   end
   
   def to_s
@@ -50,8 +55,10 @@ class Ec2Instance
   end
   
   def name
-    @tags.each do |t|
-      return t['value'] if t['key'] == 'Name'
+    unless @tags.nil?
+      @tags.each do |t|
+        return t['value'] if t['key'] == 'Name'
+      end
     end
     ""
   end
@@ -103,14 +110,20 @@ class RdsInstance
     "Endpoint: #{@endpoint_address}\n" +
     "Port: #{@endpoint_port}\n"
   end
+  
 end
 
 class LcAws
   attr_accessor :ec2, :rds
   
-  def initialize
-    @ec2 = AWS::EC2::Base.new(:access_key_id => ACCESS_KEY_ID, :secret_access_key => SECRET_ACCESS_KEY)
-    @rds = AWS::RDS::Base.new(:access_key_id => ACCESS_KEY_ID, :secret_access_key => SECRET_ACCESS_KEY)
+  def initialize(region = "us-east-1")
+    ec2_server = "ec2.us-east-1.amazonaws.com" if region == "us-east-1"
+    ec2_server = "ec2.us-west-1.amazonaws.com" if region == "us-west-1"
+    rds_server = "rds.us-east-1.amazonaws.com" if region == "us-east-1"
+    rds_server = "rds.us-west-1.amazonaws.com" if region == "us-west-1"
+    
+    @ec2 = AWS::EC2::Base.new(:access_key_id => ACCESS_KEY_ID, :secret_access_key => SECRET_ACCESS_KEY, :server => ec2_server)
+    @rds = AWS::RDS::Base.new(:access_key_id => ACCESS_KEY_ID, :secret_access_key => SECRET_ACCESS_KEY, :server => rds_server)
   end
 
   #
@@ -119,28 +132,31 @@ class LcAws
   def get_instances
     all_instances = Array.new
     instance_data = get_instance_blob
-    
-    items = instance_data["reservationSet"]["item"]
-    items.each do |i|
-      new_instance = nil
-      instances = i["instancesSet"]["item"]
-      instances.each do |instance|
-        new_instance = Ec2Instance.new(instance)
-        all_instances << new_instance
+    if instance_data != nil
+      items = instance_data["reservationSet"]["item"]
+      items.each do |i|
+        new_instance = nil
+        instances = i["instancesSet"]["item"]
+        instances.each do |instance|
+          new_instance = Ec2Instance.new(instance)
+          all_instances << new_instance
 
-        groups = i["groupSet"]["item"]
-        new_instance.group = groups[0]['groupId']
-      end
-    end   
+          groups = i["groupSet"]["item"]
+          new_instance.group = groups[0]['groupId']
+        end
+      end   
+    end
     all_instances 
   end
   
   def get_rds_instances
     all_instances = Array.new
     db_instances = @rds.describe_db_instances["DescribeDBInstancesResult"]["DBInstances"]["DBInstance"]
-    db_instances.each do |db_data|
-      new_instance = RdsInstance.new(db_data)
-      all_instances << new_instance
+    if db_instances != nil
+      db_instances.each do |db_data|
+        new_instance = RdsInstance.new(db_data)
+        all_instances << new_instance
+      end
     end
     all_instances
   end
@@ -217,6 +233,30 @@ class LcAws
     stop_instances(get_loadgen_instances)
   end
   
+  def add_web_instances(num, zone, names, ami = DEFAULT_WEB_AMI)
+    opts = {:image_id => ami, 
+            :min_count => 1,
+            :max_count => 1,
+            :security_group => "WebGroup",
+            :instance_type => "m1.xlarge",
+            :availability_zone => zone,
+            :monitoring_enabled => true
+           }
+    add_instances(num,names,'web', opts)
+  end
+  
+  def add_app_instances(num, zone, names, ami = DEFAULT_APP_AMI)
+    opts = {:image_id => ami, 
+            :min_count => 1,
+            :max_count => 1,
+            :security_group => "AppGroup",
+            :instance_type => "c1.xlarge",
+            :availability_zone => zone,
+            :monitoring_enabled => true
+           }
+    add_instances(num,names,'app', opts)
+  end
+  
   #
   # printing helpful commands
   #
@@ -243,6 +283,31 @@ class LcAws
   def get_instance_blob
     @ec2.describe_instances
   end
+  
+  def add_instances(num, names, role, opts)
+     index = 0
+     num.times do
+       puts "creating #{role} instance #{index}: name = #{names[index]}..."
+       response = @ec2.run_instances(opts)
+       instance_id = response.instancesSet.item[0].instanceId
+       puts " => instance Created: id=#{instance_id}"
+       sleep 1
+       tag_instance(instance_id,[{'Name' => names[index]}, {'Role' => "#{role}"}])
+       puts " => instance Tags Set."
+       index += 1
+     end
+   end
+
+   def tag_instance(instance_id, tags)
+     tag_opts = {:resource_id => [instance_id], 
+                 :tag => tags 
+                }
+     begin
+       @ec2.create_tags(tag_opts)    
+     rescue => ex
+       puts "Exception creating tags: "
+     end
+   end
   
 end
 
