@@ -59,7 +59,7 @@ class Ec2Instance
       @tags.each do |t|
         return t['value'] if t['key'] == 'Name'
       end
-    end
+    end 
     ""
   end
   
@@ -160,7 +160,22 @@ class LcAws
     end
     all_instances
   end
-  
+ 
+  def get_rds_instances_by_name(name_filter)
+    all_instances = get_rds_instances
+    filtered_instances = Array.new
+    all_instances.each do |instance|
+      # check if the name matches AND the state matches the filter provided
+      if !instance.name.nil? and instance.name.include?(name_filter) 
+        filtered_instances << instance
+      else  
+        puts instance.name.to_s
+      end
+    end
+    filtered_instances
+  end
+
+ 
   def get_app_instances(instances = nil, state = nil)
     get_instances_by_name("app", instances, state)
   end
