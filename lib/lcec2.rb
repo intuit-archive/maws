@@ -165,7 +165,7 @@ class LcAws
     all_instances = get_rds_instances
     filtered_instances = Array.new
     all_instances.each do |instance|
-      # check if the name matches AND the state matches the filter provided
+      # check if the name matches
       if !instance.name.nil? and instance.name.include?(name_filter) 
         filtered_instances << instance
       else  
@@ -270,27 +270,6 @@ class LcAws
             :monitoring_enabled => true
            }
     add_instances(num,names,'app', opts)
-  end
-  
-  #
-  # printing helpful commands
-  #
-  def print_proxy_members(instances = nil)
-    apps = get_app_instances(instances)
-    apps.each do |instance|
-      puts "# #{instance.name}" if instance.running?
-      puts "BalancerMember http://#{instance.private_dns_name}:8080" if instance.running?
-    end
-  end
-
-  def self.print_ssh_commands(instances)
-    instances.each do |instance|
-      if instance.keyname == ""
-        puts "ssh -i intuit-baseline.pem ea@#{instance.dns_name}"  if instance.running?
-      else
-        puts "ssh -i #{instance.keyname}.pem root@#{instance.dns_name}"  if instance.running?
-      end
-    end
   end
   
   private

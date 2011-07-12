@@ -28,22 +28,22 @@ def get_web_proxy_config(ecc, instances, args)
   app_count = 0
   proxy_config = Array.new
   
+  # get running web and app instances
   apps = ecc.get_app_instances(instances, "running")
   webs = ecc.get_web_instances(instances, "running")
-
-  # TODO: remove non-running instances from apps and webs
   
   # sort by the number appended to the name
   apps.sort! {|a,b| a.name[3..-1].to_i <=> b.name[3..-1].to_i}
   webs.sort! {|a,b| a.name[3..-1].to_i <=> b.name[3..-1].to_i}
   
+  # make sure the ration of web to apps is correct
   if webs.size * APPS_PER_WEB != apps.size
     puts "Environment Imbalance Error: there must be #{APPS_PER_WEB} app servers for each web server. Currently there are #{webs.size} webs and #{apps.size} apps"
     return nil
   end
   
+  # allocate the app servers to the web servers
   app_index = 0
-
   webs.each_with_index do |web_instance, index|
     proxy_config[index] = Hash.new
     proxy_config[index][:name] = web_instance.name
@@ -136,14 +136,6 @@ end
 def create_database_configs(ecc, instances, args)
   slave_config = get_database_configs(ecc, instances, args)
   slave_config.each { |x| puts x.inspect + "\n\n ##########"}    
-end
-
-def print_ssh_commands(ecc, instances, args)
-  puts "SSH commands (apps)"
-  LcAws.print_ssh_commands(ecc.get_app_instances(instances))
-
-  puts "SSH commands (loadgen)"
-  LcAws.print_ssh_commands(ecc.get_loadgen_instances(instances))
 end
 
 def stop_apps(ecc, instances, args)
@@ -275,9 +267,12 @@ end
 
 
 def print_usage
-#   puts self.public_methods.sort
-#  puts "USAGE: ruby lcaws.rb [list][web-proxy][ssh-commands][stop-apps][start-apps][show-apps][open-apps][stop-loadgens][start-loadgens][show-loadgens][open-loadgens][open-webs][show-dbs][scp-loadgen-results][create-envfile]\n"+
- #      "  There should be at least one command. If more than one command is specified then commands are executed in order"
+ puts "USAGE: ruby lcaws.rb <command>"
+ puts "where <command> is one of the following methods: \n"+
+       " create_envfile, create_web_proxy_config, create_database_configs, list_instances, \n"+
+       " start_apps, stop_apps, show_apps, open_app_terminals, \n" +
+       " start_loadgens, stop_loadgens, open_loadgen_termials, \n"+
+       " start_webs, stop_webs, show_webs, open_web_terminals\n"
 end
 
 ###############
