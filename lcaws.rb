@@ -224,14 +224,26 @@ def show_loadgens(ecc, instances, args)
   end
 end
 
-def show_dbs(ecc, instances, args)
-  puts "Current Database Instances:"
-  dbs = ecc.get_rds_instances
-  dbs.each do |db|
-    puts db.to_s
-    puts ' '
+
+def stop_webs(ecc, instances, args)
+  puts "Stopping all web servers..."
+  ecc.stop_web_servers
+  puts "Done."
+end
+
+def start_webs(ecc, instances, args)
+  puts "Starting all web servers..."
+  ecc.start_web_servers
+  puts "Done."
+end
+
+def show_webs(ecc, instances, args)
+  webs = ecc.get_web_instances(instances)
+  webs.each do |web|
+        puts web.name + " : " + web.state
   end
 end
+
 
 def scp_loadgen_results(ecc, instances, args)
   servers = ecc.get_loadgen_instances(instances)
@@ -263,6 +275,16 @@ def open_web_terminals(ecc, instances, args)
       puts "opening terminal as: #{cmd}"
       `scripts/it #{cmd}`
     end
+  end
+end
+
+
+def show_dbs(ecc, instances, args)
+  puts "Current Database Instances:"
+  dbs = ecc.get_rds_instances
+  dbs.each do |db|
+    puts db.to_s
+    puts ' '
   end
 end
 
@@ -300,10 +322,11 @@ end
 def print_usage
  puts "USAGE: ruby lcaws.rb <command>"
  puts "where <command> is one of the following methods: \n"+
-       " create_envfile, create_web_proxy_config, create_database_configs, list_instances, \n"+
+       " create_envfile, create_web_proxy_config, create_database_configs, \n"+
        " start_apps, stop_apps, show_apps, open_app_terminals, \n" +
        " start_loadgens, stop_loadgens, open_loadgen_termials, \n"+
-       " start_webs, stop_webs, show_webs, open_web_terminals\n"
+       " start_webs, stop_webs, show_webs, open_web_terminals\n"+
+       " show_dbs, list_instances"
 end
 
 ###############
@@ -314,5 +337,10 @@ if ARGV.size < 1
 else
   ecc = LcAws.new
   instances = ecc.get_instances
-  send(ARGV[0],ecc,instances, ARGV) 
+  
+  begin
+    send(ARGV[0],ecc,instances, ARGV) 
+  rescue => ex
+    puts "Error running command: #{ex.inspect}"
+  end
 end
