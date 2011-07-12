@@ -11,8 +11,8 @@ CAPISTRANO_UPLOAD_DIR = "../deploy/upload"
 
 PEM_PATH = ENV["AWS_PEM_PATH"]
 
-APPS_PER_WEB = 5
-
+APPS_PER_WEB = 6
+APPS_PER_DB =  5
 
 def list_instances(ecc, instances, args)
   instances.each_with_index do |i, index|
@@ -91,14 +91,51 @@ def create_web_proxy_config(ecc, instances, args)
       puts "Exception writing file: #{ex.inspect}"
     end
   end
-  create_envfile(ecc, instances, "amazon-perf")
   upload_vhost(ecc, instances)
   cap "control:restart_apache", "amazon-perf"
 end
 
-def print_database_configs(ecc, instances, args)
+def get_database_configs(ecc, instances, args)
   dbs = ecc.get_rds_instances
+
+  app_num = 1
+  db_count = 0
+  slave_config = Array.new
+
+  apps = ecc.get_app_instances(instances, "running")
+  dbs = ecc.get_rds_instances
+  #dbs[0].endpoint_address
   
+  # sort by the number appended to the name
+  apps.sort! {|a,b| a.name[3..-1].to_i <=> b.name[3..-1].to_i}
+  dbs.sort! {|a,b| a.name[3..-1].to_i <=> b.name[3..-1].to_i}
+
+  if dbs.size * APPS_PER_DB != apps.size
+    puts "Environment Imbalance Error: there must be #{APPS_PER_DB} app servers for each slave db server. Currently there are #{apps.size} apps and #{dbs.size} slave databases"
+    return nil
+  end
+
+  app_index = 0
+
+  dbs.each_with_index do |db_instance, index|
+    slave_config[index] = Hash.new
+    slave_config[index][:name] = db_instance.name
+    slave_config[index][:private_dns] = db_instance.endpoint_address
+
+    slave_config[index][:apps] = Array.new
+    dbs.size.times do
+      slave_config[index][:apps] << "# #{apps[app_index].name} \n http://#{apps[app_index].private_dns_name}:8080"
+      app_index += 1
+    end
+  end
+
+  return slave_config
+
+end
+
+def create_database_configs(ecc, instances, args)
+  slave_config = get_database_configs(ecc, instances, args)
+  slave_config.each { |x| puts x.inspect + "\n\n ##########"}    
 end
 
 def print_ssh_commands(ecc, instances, args)
