@@ -12,7 +12,7 @@ CAPISTRANO_UPLOAD_DIR = "../deploy/upload"
 PEM_PATH = ENV["AWS_PEM_PATH"]
 
 APPS_PER_WEB = 6
-APPS_PER_DB =  5
+APPS_PER_DB =  12
 
 def list_instances(ecc, instances, args)
   instances.each_with_index do |i, index|
@@ -96,14 +96,15 @@ def create_web_proxy_config(ecc, instances, args)
 end
 
 def get_database_configs(ecc, instances, args)
-  dbs = ecc.get_rds_instances
-
   app_num = 1
   db_count = 0
   slave_config = Array.new
 
   apps = ecc.get_app_instances(instances, "running")
-  dbs = ecc.get_rds_instances
+  dbs = ecc.get_rds_instances_by_name("slavedb")
+  masterdb = ecc.get_rds_instances_by_name("masterdb")[0]
+  session = ecc.get_rds_instances_by_name("session")[0]
+
   #dbs[0].endpoint_address
   
   # sort by the number appended to the name
@@ -115,27 +116,56 @@ def get_database_configs(ecc, instances, args)
     return nil
   end
 
-  app_index = 0
+  database_yml_config = Array.new
+  db_loop = 0 #current database server
+  set_counter = 1 #current iteration for each database
 
-  dbs.each_with_index do |db_instance, index|
-    slave_config[index] = Hash.new
-    slave_config[index][:name] = db_instance.name
-    slave_config[index][:private_dns] = db_instance.endpoint_address
-
-    slave_config[index][:apps] = Array.new
-    dbs.size.times do
-      slave_config[index][:apps] << "# #{apps[app_index].name} \n http://#{apps[app_index].private_dns_name}:8080"
-      app_index += 1
-    end
+  apps.each do |app|
+     puts "DEBUG: current db = #{db_loop} current app_counter = #{set_counter}"
+     database_yml_config << [app.private_dns_name, dbs[db_loop].endpoint_address, masterdb.endpoint_address, session.endpoint_address]
+     if set_counter.eql?(APPS_PER_DB) 
+        db_loop = db_loop + 1
+        set_counter = 0
+     end
+     set_counter = set_counter + 1
   end
 
-  return slave_config
+  #database_yml_config.sort! {|a,b| a.name[3..-1].to_i <=> b.name[3..-1].to_i}
+  database_yml_config.each do |x|
+      puts "app: #{x[0]}, db: #{x[1]}"
+      puts "\n"
+  end
+
+  return database_yml_config
 
 end
 
 def create_database_configs(ecc, instances, args)
   slave_config = get_database_configs(ecc, instances, args)
-  slave_config.each { |x| puts x.inspect + "\n\n ##########"}    
+  #slave_config.each { |x| puts x.inspect + "\n\n ##########"}    
+  slave_config.each do |w|
+    #CAPISTRANO_UPLOAD_DIR: root directory of capistrano uploads 
+    #server_name: directory under upload_dir where an individual server will get its 'stuff', created when the ec2 info is parsed
+    #file_name: the name of the file you are creating and will get uploaded
+    server_name = w[0]
+    file_name = "database.yml"
+    file_dir = "#{CAPISTRANO_UPLOAD_DIR}/#{server_name}"
+    db_file_name = "#{file_dir}/#{file_name}"
+
+    begin
+      File.delete(db_file_name) if File.exists?(db_file_name)
+      Dir.mkdir(file_dir) unless File.exists?(file_dir)
+      db_file = File.new(db_file_name, "w")
+      db_file.puts "slave: #{w[1]}\n"
+      db_file.puts "master: #{w[2]}\n"
+      db_file.puts "sesion: #{w[3]}\n"
+      db_file.close
+      puts `cat #{db_file_name}`
+    rescue => ex
+      puts "Exception writing file: #{ex.inspect}"
+    end
+  end
+
 end
 
 def print_ssh_commands(ecc, instances, args)
