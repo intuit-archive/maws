@@ -9,7 +9,7 @@ SECRET_ACCESS_KEY = ENV["AWS_SECRET_ACCESS_KEY"]
 
 DEFAULT_WEB_AMI = "ami-98d014f1"
 DEFAULT_APP_AMI = "ami-bd07c3d4"
-DEFAULT_LOADGE_AMI = "ami-bd07c3d4"
+DEFAULT_LOADGEN_AMI = "ami-bd07c3d4"
 
 class LcAws
   attr_accessor :ec2, :rds
