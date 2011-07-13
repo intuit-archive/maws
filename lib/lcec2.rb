@@ -1,6 +1,6 @@
 require 'rubygems'
 require 'AWS'
-
+require './lib/models'
 
 #Set the aws keys in your env.
 ACCESS_KEY_ID = ENV["AWS_ACCESS_KEY_ID"]
@@ -8,110 +8,8 @@ SECRET_ACCESS_KEY = ENV["AWS_SECRET_ACCESS_KEY"]
 
 
 DEFAULT_WEB_AMI = "ami-98d014f1"
-DEFAULT_APP_AMI = "ami-da4fb4b3"
+DEFAULT_APP_AMI = "ami-bd07c3d4"
 
-
-class Ec2Instance
-  attr_accessor :instance_id,
-                :dns_name,
-                :private_dns_name,
-                :private_ip,
-                :instance_type,
-                :monitoring,
-                :state,
-                :group,
-                :keyname,
-                :tags,
-                :raw_data
-  
-  def initialize(data)
-    #puts data.keys
-    @raw_data = data
-    @instance_id = data['instanceId']
-    @dns_name = data['dnsName']
-    @private_dns_name = data['privateDnsName']
-    @private_ip = data['privateIpAddress']
-    @instance_type = data['instanceType']
-    @monitoring = data['monitoring']
-    @state = data['instanceState']['name']
-    @keyname = data['keyName']
-    @tags = data['tagSet']['item'] unless data['tagSet'].nil?
-  end
-  
-  def to_s
-    str = 
-    "Name: #{name}\n" +
-    "State: #{@state}\n" +
-    "Instance ID: #{@instance_id}\n" +
-    "Public DNS: #{@dns_name}\n" +
-    "Private DNS: #{@private_dns_name}\n" +
-    "Private IP: #{@private_ip}\n" +
-    "Instance Type: #{@instance_type}\n" +
-    "Group: #{@group}\n"
-    @tags.each do |t|
-      str += "tags: #{t["key"]} = #{t["value"]}\n"
-    end
-    str
-  end
-  
-  def name
-    unless @tags.nil?
-      @tags.each do |t|
-        return t['value'] if t['key'] == 'Name'
-      end
-    end 
-    ""
-  end
-  
-  def running?
-    return @state == "running"
-  end
-  
-  def stopped?
-     return @state == "stopped"
-   end
-  
-end
-
-class RdsInstance
-  attr_accessor :name,
-                :endpoint_address,
-                :endpoint_port,
-                :parameter_group,
-                :storage,
-                :instance_class,
-                :state
-                
-  def initialize(data)
-    #=> {"Engine"=>"mysql5.5", "PendingModifiedValues"=>nil, "BackupRetentionPeriod"=>"0", "DBInstanceStatus"=>"modifying", 
-    #    "DBParameterGroups"=>{"DBParameterGroup"=>{"ParameterApplyStatus"=>"pending-reboot", "DBParameterGroupName"=>"ttlc-mysql-5-5"}}, 
-    #    "DBInstanceIdentifier"=>"db1", "Endpoint"=>{"Port"=>"3306", "Address"=>"db1.cckovstulx2c.us-east-1.rds.amazonaws.com"}, 
-    #    "DBSecurityGroups"=>{"DBSecurityGroup"=>{"Status"=>"active", "DBSecurityGroupName"=>"default"}}, "PreferredBackupWindow"=>"07:30-08:00", 
-    #    "DBName"=>"cia_prod", "PreferredMaintenanceWindow"=>"fri:03:00-fri:03:30", "AvailabilityZone"=>"us-east-1c", 
-    #    "InstanceCreateTime"=>"2011-05-17T21:32:22.692Z", "AllocatedStorage"=>"300", "DBInstanceClass"=>"db.m1.large", "MasterUsername"=>"dbuser"} 
-        
-    @name = data['DBInstanceIdentifier']
-    @endpoint_address = data['Endpoint']['Address'] if data['Endpoint']
-    @endpoint_port = data['Endpoint']['Port'] if data['Endpoint']
-    @parameter_group = data['DBParameterGroups']['DBParameterGroup']['DBParameterGroupName']
-    @storage = data['AllocatedStorage'].to_i if data['AllocatedStorage']
-    @instance_class = data['DBInstanceClass']
-    @state = data['DBInstanceStatus']
-    
-  end
-  
-  def to_s
-    str = 
-    "Name: #{@name}\n" +
-    "State: #{@state}\n" +
-    "Instance Type: #{@instance_class}\n" +
-    "Storage: #{@storage}GB\n" +
-    "Parameter Group: #{@parameter_group}\n" +
-    "Endpoint: #{@endpoint_address}\n" +
-    "Port: #{@endpoint_port}\n"
-  end
-  
-end
 
 class LcAws
   attr_accessor :ec2, :rds
@@ -272,6 +170,14 @@ class LcAws
     add_instances(num,names,'app', opts)
   end
   
+  def show_current_region
+    
+  end
+  
+  def get_availability_zones
+    zones = @ec2.describe_availability_zones["availabilityZoneInfo"]["item"]
+  end
+  
   private
   
   def get_instance_blob
@@ -285,9 +191,9 @@ class LcAws
        response = @ec2.run_instances(opts)
        instance_id = response.instancesSet.item[0].instanceId
        puts " => instance Created: id=#{instance_id}"
-       sleep 1
-       tag_instance(instance_id,[{'Name' => names[index]}, {'Role' => "#{role}"}])
-       puts " => instance Tags Set."
+       tagged = tag_instance(instance_id,[{'Name' => names[index]}, {'Role' => "#{role}"}])
+       puts " => instance Tags Set." if tagged
+       puts " => instance Tags NOT Set." if !tagged
        index += 1
      end
    end
@@ -296,12 +202,21 @@ class LcAws
      tag_opts = {:resource_id => [instance_id], 
                  :tag => tags 
                 }
-     begin
-       @ec2.create_tags(tag_opts)    
-     rescue => ex
-       puts "Exception creating tags: "
+     tagged = false
+     
+     3.times do
+       begin
+         @ec2.create_tags(tag_opts)
+         tagged = true
+         break
+       rescue => ex
+         puts "Exception creating tags."
+         # most likely needs more time to AWS to record the instanceID, so just pause a sec
+         sleep 1
+       end
      end
+     return tagged
    end
-  
+   
 end
 
