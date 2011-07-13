@@ -9,7 +9,7 @@ SECRET_ACCESS_KEY = ENV["AWS_SECRET_ACCESS_KEY"]
 
 DEFAULT_WEB_AMI = "ami-98d014f1"
 DEFAULT_APP_AMI = "ami-bd07c3d4"
-
+DEFAULT_LOADGE_AMI = "ami-bd07c3d4"
 
 class LcAws
   attr_accessor :ec2, :rds
@@ -155,7 +155,7 @@ class LcAws
             :availability_zone => zone,
             :monitoring_enabled => true
            }
-    add_instances(num,names,'web', opts)
+    add_instances(num,names,'web',opts)
   end
   
   def add_app_instances(num, zone, names, ami = DEFAULT_APP_AMI)
@@ -167,11 +167,24 @@ class LcAws
             :availability_zone => zone,
             :monitoring_enabled => true
            }
-    add_instances(num,names,'app', opts)
+    add_instances(num,names,'app',opts)
+  end
+  
+  def add_loadgen_instances(num, zone, names, ami = DEFAULT_LOADGEN_AMI)
+    opts = {:image_id => ami, 
+            :min_count => 1,
+            :max_count => 1,
+            :security_group => "LoadGenGroup",
+            :instance_type => "m2.xlarge",
+            :availability_zone => zone,
+            :monitoring_enabled => false
+           }
+    add_instances(num,names,'loadgen',opts)
   end
   
   def show_current_region
-    
+    # TODO: implement this somehow...
+    puts "Not Yet Implemented... show_current_region"
   end
   
   def get_availability_zones
