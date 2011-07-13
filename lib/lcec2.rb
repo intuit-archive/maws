@@ -9,7 +9,7 @@ SECRET_ACCESS_KEY = ENV["AWS_SECRET_ACCESS_KEY"]
 
 DEFAULT_WEB_AMI = "ami-98d014f1"
 DEFAULT_APP_AMI = "ami-bd07c3d4"
-DEFAULT_LOADGEN_AMI = "ami-bd07c3d4"
+DEFAULT_LOADGEN_AMI = "ami-cb03c7a2"
 
 class LcAws
   attr_accessor :ec2, :rds
@@ -136,6 +136,14 @@ class LcAws
 
   def stop_app_servers
     stop_instances(get_app_instances)
+  end
+  
+  def start_web_servers
+    start_instances(get_web_instances)
+  end
+
+  def stop_web_servers
+    stop_instances(get_web_instances)
   end
   
   def start_loadgen_servers

@@ -304,7 +304,7 @@ end
 def open_loadgen_terminals(ecc, instances, args)
   servers = ecc.get_loadgen_instances(instances, "running")
   servers.each do |lg|
-    cmd =  "ssh -i ~/mattinasi.pem root@#{lg.dns_name}"
+    cmd =  "ssh -i ~/intuit-baseline.pem ea@#{lg.dns_name}"
     puts "opening terminal as: #{cmd}"
     `scripts/it #{cmd}`
   end
