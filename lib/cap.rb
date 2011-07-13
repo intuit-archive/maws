@@ -35,6 +35,22 @@ def restart_unicorn(ecc, instances, args)
   cap "control:restart_unicorn", community
 end
 
+def stop_unicorn(ecc, instances, args)
+  args[1].nil? ? community = "amazon-perf" : community = args[1]
+  cap "control:stop_unicorn", community
+end
+
+def start_unicorn(ecc, instances, args)
+  args[1].nil? ? community = "amazon-perf" : community = args[1]
+  cap "control:start_unicorn", community
+end
+
+def stat_unicorn(ecc, instances, args)
+  args[1].nil? ? community = "amazon-perf" : community = args[1]
+  cap "control:stat_unicorn", community
+end
+
+
 def start_memcached(ecc, instances, args)
   args[1].nil? ? community = "amazon-perf" : community = args[1]
   cap "control:start_memcached", community
@@ -57,8 +73,18 @@ def upload_vhost(ecc, instances)
    end
    cap "control:move_vhost", "amazon-perf"
 end
-   
- 
+
+def upload_database_yml(ecc, instances)
+   #get active web servers...
+   app =  ecc.get_app_instances(instances, "running")
+   #individually upload vhost files
+   app.each do |x|
+      name = x.private_dns_name
+      `scp ../deploy/upload/#{name}/database.yml #{name}:.`
+   end
+   cap "control:move_database_yml", "amazon-perf"
+end
+
 private 
   
 def cap(command, community, server = nil)

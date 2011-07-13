@@ -9,6 +9,10 @@ require './lib/cap'
 CAPISTRANO_ENVFILE_DIR = "../deploy/envfiles"
 CAPISTRANO_UPLOAD_DIR = "../deploy/upload"
 
+#TODO: This needs refactoring for multiple communities but pulling it out for temp security.
+DB_USERNAME = ENV["DB_USERNAME"]
+DB_PASSWORD = ENV["DB_PASSWORD"]
+
 PEM_PATH = ENV["AWS_PEM_PATH"]
 
 APPS_PER_WEB = 6
@@ -157,16 +161,50 @@ def create_database_configs(ecc, instances, args)
       File.delete(db_file_name) if File.exists?(db_file_name)
       Dir.mkdir(file_dir) unless File.exists?(file_dir)
       db_file = File.new(db_file_name, "w")
-      db_file.puts "slave: #{w[1]}\n"
-      db_file.puts "master: #{w[2]}\n"
-      db_file.puts "sesion: #{w[3]}\n"
+      app_name = w[0] 
+      db_slave = w[1]
+      db_master = w[2]
+      db_session = w[3]
+
+      db_file.puts"#database file for app server #{app_name}\n"
+      db_file.puts"production:"
+      db_file.puts"  adapter: mysql"
+      db_file.puts"  database: cia_prod"
+      db_file.puts"  username: #{DB_USERNAME}"
+      db_file.puts"  password: #{DB_PASSWORD}"
+      db_file.puts"  host: #{db_master}"
+      db_file.puts"  port: 3306"
+      db_file.puts"\n"
+      db_file.puts"production_slave_database_1:"
+      db_file.puts"  adapter: mysql"
+      db_file.puts"  database: cia_prod"
+      db_file.puts"  host: #{db_slave}"
+      db_file.puts"  username: #{DB_USERNAME}"
+      db_file.puts"  password: #{DB_PASSWORD}"
+      db_file.puts"  port: 3306"
+      db_file.puts"\n"
+      db_file.puts"sessions:"
+      db_file.puts"  adapter: mysql"
+      db_file.puts"  database: sessions"
+      db_file.puts"  username: #{DB_USERNAME}"
+      db_file.puts"  password: #{DB_PASSWORD}"
+      db_file.puts"  host: #{db_session}"
+      db_file.puts"  port: 3306"
+#      db_file.puts"\n"
+#      db_file.puts"cassandra_sessions:"
+#      db_file.puts"  #host: ip-10-111-61-76.ec2.internal"
+#      db_file.puts"  host: ip-10-38-93-252.ec2.internal"
+#      db_file.puts"  port: 9160"
+
       db_file.close
       puts `cat #{db_file_name}`
     rescue => ex
       puts "Exception writing file: #{ex.inspect}"
     end
   end
-
+  upload_database_yml(ecc, instances)
+  cap "control:stop_unicorn", "amazon-perf"
+  cap "control:start_unicorn", "amazon-perf"
 end
 
 def stop_apps(ecc, instances, args)
@@ -275,8 +313,8 @@ def create_envfile(ecc, instances, args)
   File.delete(envfile_name) if File.exists?( envfile_name)
   #TODO: some exception handling here cause its good to the last drop....
   envfile = File.new(envfile_name, "w")
-  web = ecc.get_web_instances
-  app = ecc.get_app_instances
+  web = ecc.get_web_instances(instances, "running")
+  app = ecc.get_app_instances(instances, "running")
   
   envfile.puts "set :community, '#{community}'"
   web_str = ""
