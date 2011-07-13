@@ -182,25 +182,26 @@ def start_apps(ecc, instances, args)
 end
 
 def show_apps(ecc, instances, args)
-  apps = ecc.get_app_instances(instances)
+  if args[1] != nil
+    state = args[1]
+  end
+  apps = ecc.get_app_instances(instances, state)
   apps.each do |app|
         puts app.name + " : " + app.state
   end
 end
 
 def open_app_terminals(ecc, instances, args)
-  servers = ecc.get_app_instances(instances)
+  servers = ecc.get_app_instances(instances, "running")
   servers.each do |app|
-    if app.running?
-      cmd = ""
-      if app.keyname != "mattinasi"
-        cmd =  "ssh -i intuit-baseline.pem ea@#{app.dns_name}"
-      else
-        cmd =  "ssh -i #{app.keyname}.pem root@#{app.dns_name}"
-      end
-      puts "opening terminal as: #{cmd}"
-      `scripts/it #{cmd}`
+    cmd = ""
+    if app.keyname != "mattinasi"
+      cmd =  "ssh -i intuit-baseline.pem ea@#{app.dns_name}"
+    else
+      cmd =  "ssh -i #{app.keyname}.pem root@#{app.dns_name}"
     end
+    puts "opening terminal as: #{cmd}"
+    `scripts/it #{cmd}`
   end
 end
 
@@ -217,8 +218,11 @@ def start_loadgens(ecc, instances, args)
 end
 
 def show_loadgens(ecc, instances, args)
+  if args[1] != nil
+    state = args[1]
+  end
   puts "Current loadgens servers:"
-  servers = ecc.get_loadgen_instances(instances)
+  servers = ecc.get_loadgen_instances(instances, state)
   servers.each do |lg|
     puts lg.name + " : " + lg.state
   end
@@ -238,7 +242,10 @@ def start_webs(ecc, instances, args)
 end
 
 def show_webs(ecc, instances, args)
-  webs = ecc.get_web_instances(instances)
+  if args[1] != nil
+    state = args[1]
+  end
+  webs = ecc.get_web_instances(instances, state)
   webs.each do |web|
         puts web.name + " : " + web.state
   end
@@ -257,24 +264,20 @@ def scp_loadgen_results(ecc, instances, args)
 end
 
 def open_loadgen_terminals(ecc, instances, args)
-  servers = ecc.get_loadgen_instances(instances)
+  servers = ecc.get_loadgen_instances(instances, "running")
   servers.each do |lg|
-    if lg.running?
-      cmd =  "ssh -i ~/mattinasi.pem root@#{lg.dns_name}"
-      puts "opening terminal as: #{cmd}"
-      `scripts/it #{cmd}`
-    end
+    cmd =  "ssh -i ~/mattinasi.pem root@#{lg.dns_name}"
+    puts "opening terminal as: #{cmd}"
+    `scripts/it #{cmd}`
   end
 end
 
 def open_web_terminals(ecc, instances, args)
-  servers = ecc.get_web_instances(instances)
+  servers = ecc.get_web_instances(instances, "running")
   servers.each do |w|
-    if w.running?
-      cmd =  "ssh -i intuit-baseline.pem ea@#{w.dns_name}"
-      puts "opening terminal as: #{cmd}"
-      `scripts/it #{cmd}`
-    end
+    cmd =  "ssh -i intuit-baseline.pem ea@#{w.dns_name}"
+    puts "opening terminal as: #{cmd}"
+    `scripts/it #{cmd}`
   end
 end
 
@@ -318,6 +321,12 @@ def create_envfile(ecc, instances, args)
   puts `cat #{envfile_name}`
 end
 
+def print_availability_zones(ecc, instances, args)
+  zones = ecc.get_availability_zones
+  zones.each do |zone|
+    puts "Availalability Zone: #{zone["zoneName"]} : #{zone["zoneState"]}"
+  end  
+end
 
 def print_usage
  puts "USAGE: ruby lcaws.rb <command>"
