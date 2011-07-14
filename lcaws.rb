@@ -19,14 +19,35 @@ APPS_PER_WEB = 6
 APPS_PER_DB =  12
 
 
-def list_instances(ecc, instances, args)
-  instances.each_with_index do |i, index|
-    puts "**** INSTANCE #{index} ****"
-    puts i.to_s
-    puts "***********************"
+#this will create the capistrano envfile for the current EC2 environment so we can send commands
+def create_envfile(ecc, instances, args)
+  args[1].nil? ? community = "amazon-perf" : community = args[1]
+  #prep the envfile
+  puts "Creating envfile for #{community}:"
+  envfile_name = "#{CAPISTRANO_ENVFILE_DIR}/#{community}.rb"
+  File.delete(envfile_name) if File.exists?( envfile_name)
+  #TODO: some exception handling here cause its good to the last drop....
+  envfile = File.new(envfile_name, "w")
+  web = ecc.get_web_instances(instances, "running")
+  app = ecc.get_app_instances(instances, "running")
+  
+  envfile.puts "set :community, '#{community}'"
+  web_str = ""
+  web.each_with_index do |i, index|
+     web_str = web_str + "\"" + i.private_dns_name + "\"," unless i.private_dns_name.nil?
   end
+  web_str.chomp!(",")
+  app_str = ""
+  app.each_with_index do |i, index|
+     app_str = app_str + "\"" + i.private_dns_name + "\"," unless i.private_dns_name.nil?
+  end
+  app_str.chomp!(",")
+  envfile.puts "role :web, " + web_str
+  envfile.puts "role :app, " + app_str
+  envfile.close
+  puts "Finished creating envfile in #{envfile_name}"
+  puts `cat #{envfile_name}`
 end
-
 
 def get_web_proxy_config(ecc, instances, args)
   ws_num = 1
@@ -110,8 +131,6 @@ def get_database_configs(ecc, instances, args)
   masterdb = ecc.get_rds_instances_by_name("masterdb")[0]
   session = ecc.get_rds_instances_by_name("session")[0]
 
-  #dbs[0].endpoint_address
-  
   # sort by the number appended to the name
   apps.sort! {|a,b| a.name[3..-1].to_i <=> b.name[3..-1].to_i}
   dbs.sort! {|a,b| a.name[3..-1].to_i <=> b.name[3..-1].to_i}
@@ -146,9 +165,8 @@ def get_database_configs(ecc, instances, args)
 end
 
 def create_database_configs(ecc, instances, args)
-  slave_config = get_database_configs(ecc, instances, args)
-  #slave_config.each { |x| puts x.inspect + "\n\n ##########"}    
-  slave_config.each do |w|
+  db_config = get_database_configs(ecc, instances, args)
+  db_config.each do |w|
     #CAPISTRANO_UPLOAD_DIR: root directory of capistrano uploads 
     #server_name: directory under upload_dir where an individual server will get its 'stuff', created when the ec2 info is parsed
     #file_name: the name of the file you are creating and will get uploaded
@@ -207,6 +225,22 @@ def create_database_configs(ecc, instances, args)
   cap "control:start_unicorn", "amazon-perf"
 end
 
+def list_instances(ecc, instances, args)
+  throw "instances param cannot be nil" if instances.nil?
+  if args[1] != nil
+    state = args[1]
+  end
+  counter = 1
+  instances.each do |i|
+    if state.nil? || state == i.state
+      puts "**** INSTANCE #{counter} ****"
+      puts i.to_s
+      puts "***********************"
+      counter += 1
+    end
+  end
+end
+
 def stop_apps(ecc, instances, args)
   puts "Stopping all app servers..."
   ecc.stop_app_servers
@@ -219,6 +253,7 @@ def start_apps(ecc, instances, args)
   puts "Done."
 end
 
+# args[1] is an optional state filter: nil means all states, otherwise it can be "running" or "stopped"
 def show_apps(ecc, instances, args)
   if args[1] != nil
     state = args[1]
@@ -231,15 +266,13 @@ end
 
 def open_app_terminals(ecc, instances, args)
   servers = ecc.get_app_instances(instances, "running")
+  counter = 1
   servers.each do |app|
-    cmd = ""
-    if app.keyname != "mattinasi"
-      cmd =  "ssh -i intuit-baseline.pem ea@#{app.dns_name}"
-    else
-      cmd =  "ssh -i #{app.keyname}.pem root@#{app.dns_name}"
-    end
-    puts "opening terminal as: #{cmd}"
+    cmd =  "ssh -i intuit-baseline.pem ea@#{app.dns_name}"
+    puts "opening terminal #{counter} as: #{cmd}"
     `scripts/it #{cmd}`
+    sleep
+    counter += 1
   end
 end
 
@@ -255,6 +288,7 @@ def start_loadgens(ecc, instances, args)
   puts "Done."
 end
 
+# args[1] is an optional state filter: nil means all states, otherwise it can be "running" or "stopped"
 def show_loadgens(ecc, instances, args)
   if args[1] != nil
     state = args[1]
@@ -278,6 +312,7 @@ def start_webs(ecc, instances, args)
   puts "Done."
 end
 
+# args[1] is an optional state filter: nil means all states, otherwise it can be "running" or "stopped"
 def show_webs(ecc, instances, args)
   if args[1] != nil
     state = args[1]
@@ -292,7 +327,7 @@ def scp_loadgen_results(ecc, instances, args)
   servers = ecc.get_loadgen_instances(instances)
   servers.each do |lg|
     if lg.running?
-      cmd =  "scp -i ~/mattinasi.pem root@#{lg.dns_name}:/home/loaduser/performance_result.log #{lg.name}.performance_result.log"
+      cmd =  "scp -i ~/intuit-baseline.pem ea@#{lg.dns_name}:/home/loaduser/performance_result.log #{lg.name}.performance_result.log"
       puts "executing: #{cmd}"
       `#{cmd}`
     end
@@ -301,19 +336,25 @@ end
 
 def open_loadgen_terminals(ecc, instances, args)
   servers = ecc.get_loadgen_instances(instances, "running")
+  counter = 0
   servers.each do |lg|
-    cmd =  "ssh -i ~/mattinasi.pem root@#{lg.dns_name}"
-    puts "opening terminal as: #{cmd}"
+    cmd =  "ssh -i ~/intuit-baseline.pem ea@#{lg.dns_name}"
+    puts "opening terminal #{counter} as: #{cmd}"
     `scripts/it #{cmd}`
+    counter += 1
+    sleep 1
   end
 end
 
 def open_web_terminals(ecc, instances, args)
   servers = ecc.get_web_instances(instances, "running")
+  counter = 0
   servers.each do |w|
     cmd =  "ssh -i intuit-baseline.pem ea@#{w.dns_name}"
-    puts "opening terminal as: #{cmd}"
+    puts "opening terminal #{counter} as: #{cmd}"
     `scripts/it #{cmd}`
+    counter += 1
+    sleep 1
   end
 end
 
@@ -326,37 +367,7 @@ def show_dbs(ecc, instances, args)
   end
 end
 
-def create_envfile(ecc, instances, args)
-  args[1].nil? ? community = "amazon-perf" : community = args[1]
-  #this will create the capistrano envfile for the current EC2 environment so we can send commands
-  #prep the envfile
-  puts "Creating envfile for #{community}:"
-  envfile_name = "#{CAPISTRANO_ENVFILE_DIR}/#{community}.rb"
-  File.delete(envfile_name) if File.exists?( envfile_name)
-  #TODO: some exception handling here cause its good to the last drop....
-  envfile = File.new(envfile_name, "w")
-  web = ecc.get_web_instances(instances, "running")
-  app = ecc.get_app_instances(instances, "running")
-  
-  envfile.puts "set :community, '#{community}'"
-  web_str = ""
-  web.each_with_index do |i, index|
-     web_str = web_str + "\"" + i.private_dns_name + "\"," unless i.private_dns_name.nil?
-  end
-  web_str.chomp!(",")
-  app_str = ""
-  app.each_with_index do |i, index|
-     app_str = app_str + "\"" + i.private_dns_name + "\"," unless i.private_dns_name.nil?
-  end
-  app_str.chomp!(",")
-  envfile.puts "role :web, " + web_str
-  envfile.puts "role :app, " + app_str
-  envfile.close
-  puts "Finished creating envfile in #{envfile_name}"
-  puts `cat #{envfile_name}`
-end
-
-def print_availability_zones(ecc, instances, args)
+def show_availability_zones(ecc, instances, args)
   zones = ecc.get_availability_zones
   zones.each do |zone|
     puts "Availalability Zone: #{zone["zoneName"]} : #{zone["zoneState"]}"
