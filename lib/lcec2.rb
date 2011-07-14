@@ -6,7 +6,8 @@ require './lib/models'
 ACCESS_KEY_ID = ENV["AWS_ACCESS_KEY_ID"]
 SECRET_ACCESS_KEY = ENV["AWS_SECRET_ACCESS_KEY"] 
 
-
+# default AMI's to use if no other AMI is specified
+# - these should be the AMI's that are the current standard for each server type
 DEFAULT_WEB_AMI = "ami-98d014f1"
 DEFAULT_APP_AMI = "ami-bd07c3d4"
 DEFAULT_LOADGEN_AMI = "ami-cb03c7a2"
@@ -27,7 +28,7 @@ class LcAws
   #
   # instance definitions
   #
-  def get_instances
+  def get_instances(state = nil)
     all_instances = Array.new
     instance_data = get_instance_blob
     if instance_data != nil
@@ -37,7 +38,7 @@ class LcAws
         instances = i["instancesSet"]["item"]
         instances.each do |instance|
           new_instance = Ec2Instance.new(instance)
-          all_instances << new_instance
+          all_instances << new_instance if (state.nil? || instance.state == state)
 
           groups = i["groupSet"]["item"]
           new_instance.group = groups[0]['groupId']
@@ -45,6 +46,19 @@ class LcAws
       end   
     end
     all_instances 
+  end
+  
+  def get_instances_by_name(name_filter, instances = nil, state = nil)
+    all_instances = instances
+    all_instances = get_instances if all_instances.nil?
+    filtered_instances = Array.new
+    all_instances.each do |instance|
+      # check if the name matches AND the state matches the filter provided
+      if instance.name.include?(name_filter) && (state.nil? || instance.state == state)
+        filtered_instances << instance 
+      end
+    end
+    filtered_instances
   end
   
   def get_rds_instances
@@ -59,8 +73,9 @@ class LcAws
     all_instances
   end
  
-  def get_rds_instances_by_name(name_filter)
-    all_instances = get_rds_instances
+  def get_rds_instances_by_name(name_filter, instances = nil)
+    all_instances = instances
+    all_instances = get_rds_instances if all_instances.nil?
     filtered_instances = Array.new
     all_instances.each do |instance|
       # check if the name matches
@@ -79,25 +94,13 @@ class LcAws
   end
 
   def get_loadgen_instances(instances = nil, state = nil)
-    get_instances_by_name("gen", instances, state)
+    get_instances_by_name("loadgen", instances, state)
   end
 
   def get_web_instances(instances = nil, state = nil)
     get_instances_by_name("web", instances, state)
   end
 
-  def get_instances_by_name(name_filter, instances = nil, state = nil)
-    all_instances = instances
-    all_instances = get_instances if all_instances.nil?
-    filtered_instances = Array.new
-    all_instances.each do |instance|
-      # check if the name matches AND the state matches the filter provided
-      if instance.name.include?(name_filter) && (state.nil? || instance.state == state)
-        filtered_instances << instance 
-      end
-    end
-    filtered_instances
-  end
 
   #
   # stopping / starting
@@ -183,7 +186,7 @@ class LcAws
             :min_count => 1,
             :max_count => 1,
             :security_group => "LoadGenGroup",
-            :instance_type => "m2.xlarge",
+            :instance_type => "m1.xlarge",
             :availability_zone => zone,
             :monitoring_enabled => false
            }
@@ -199,8 +202,10 @@ class LcAws
     zones = @ec2.describe_availability_zones["availabilityZoneInfo"]["item"]
   end
   
+  ################
   private
-  
+  ################
+    
   def get_instance_blob
     @ec2.describe_instances
   end
