@@ -6,12 +6,12 @@ require './lib/lcec2'
 ecc = LcAws.new
 
 # add 2 web, 12 app to us-east1-b
-ecc.add_web_instances(2, "us-east-1b", ["web01", "web02"])
-ecc.add_app_instances(12, "us-east-1b", ["app001", "app002", "app003", "app004", "app005", "app006", "app007", "app008", "app009", "app010", "app011", "app012"])
+#ecc.add_web_instances(2, "us-east-1b", ["web01", "web02"])
+#ecc.add_app_instances(12, "us-east-1b", ["app001", "app002", "app003", "app004", "app005", "app006", "app007", "app008", "app009", "app010", "app011", "app012"])
 
 # add 2 web, 12 app to us-east1-c
-ecc.add_web_instances(2, "us-east-1c", ["web03", "web04"])
-ecc.add_app_instances(12, "us-east-1c", ["app013", "app014", "app015", "app016", "app017", "app018", "app019", "app020", "app021", "app022", "app023", "app024"])
+#ecc.add_web_instances(2, "us-east-1c", ["web03", "web04"])
+#ecc.add_app_instances(12, "us-east-1c", ["app013", "app014", "app015", "app016", "app017", "app018", "app019", "app020", "app021", "app022", "app023", "app024"])
 
 # add 10 loadgen instances in each zone
 ecc.add_loadgen_instances(10, "us-east-1b", ["loadgen01","loadgen02","loadgen03","loadgen04","loadgen05","loadgen06","loadgen07","loadgen08","loadgen09","loadgen10",])
