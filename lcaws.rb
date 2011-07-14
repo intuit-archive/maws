@@ -49,7 +49,7 @@ def create_envfile(ecc, instances, args)
   puts `cat #{envfile_name}`
 end
 
-def get_web_proxy_config(ecc, instances, args)
+def get_web_proxy_configs(ecc, instances, args)
   ws_num = 1
   app_count = 0
   proxy_config = Array.new
@@ -85,13 +85,13 @@ def get_web_proxy_config(ecc, instances, args)
   return proxy_config
 end
 
-def create_web_proxy_config(ecc, instances, args)
+def update_web_configs(ecc, instances, args)
   unless File.exists?(CAPISTRANO_UPLOAD_DIR)
     puts "Capistrano Upload Directory must already exist: #{CAPISTRANO_UPLOAD_DIR}"
     return
   end
   
-  webs = get_web_proxy_config(ecc, instances, args)
+  webs = get_web_proxy_configs(ecc, instances, args)
   webs.each do |w|
     #CAPISTRANO_UPLOAD_DIR: root directory of capistrano uploads 
     #server_name: directory under upload_dir where an individual server will get its 'stuff', created when the ec2 info is parsed
@@ -164,7 +164,7 @@ def get_database_configs(ecc, instances, args)
 
 end
 
-def create_database_configs(ecc, instances, args)
+def update_database_configs(ecc, instances, args)
   db_config = get_database_configs(ecc, instances, args)
   db_config.each do |w|
     #CAPISTRANO_UPLOAD_DIR: root directory of capistrano uploads 
@@ -184,7 +184,7 @@ def create_database_configs(ecc, instances, args)
       db_master = w[2]
       db_session = w[3]
 
-      db_file.puts"#database file for app server #{app_name}\n"
+      db_file.puts"#database file for app server #{app_name} (#{Time.now})\n"
       db_file.puts"production:"
       db_file.puts"  adapter: mysql"
       db_file.puts"  database: cia_prod"
