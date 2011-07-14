@@ -300,7 +300,6 @@ def show_loadgens(ecc, instances, args)
   end
 end
 
-
 def stop_webs(ecc, instances, args)
   puts "Stopping all web servers..."
   ecc.stop_web_servers
@@ -359,7 +358,6 @@ def open_web_terminals(ecc, instances, args)
   end
 end
 
-
 def show_dbs(ecc, instances, args)
   puts "Current Database Instances:"
   dbs = ecc.get_rds_instances
@@ -374,6 +372,34 @@ def show_availability_zones(ecc, instances, args)
   zones.each do |zone|
     puts "Availalability Zone: #{zone["zoneName"]} : #{zone["zoneState"]}"
   end  
+end
+
+def validate_servers(ecc, instances, args)
+#a check validation for all servers
+  web = ecc.get_web_instances(instances, "running")
+  app = ecc.get_app_instances(instances, "running")
+  servers = web | app
+  puts "Validating Servers"
+  status = Array.new
+  servers.each do |current_server|
+    begin
+      #check one make sure the server has a private dns
+      private_name = current_server.private_dns_name
+      #check to make sure the server has a public dns
+      public_name = current_server.dns_name
+      #connect via ssh and run hostname to validate connection
+      private_ping = system "ssh #{private_name} hostname > /dev/null 2>&1"
+      #connect cia ssh and rub hostname on validate connection
+      public_ping = system "ssh #{public_name} hostname > /dev/null 2>&1"
+      #gather the data!! 
+      status << [private_name, public_name, private_ping, public_ping]
+    rescue
+      puts "Something nasty happened"
+      status << [private_name.to_s, public_name.to_s, private_ping.to_s, public_ping.to_s]
+    end
+  end
+  status.each { |a,b,c,d| puts a + "::" + b + "::" + c.to_s + "::" + d.to_s}
+  puts "Validated complete: [#{servers.size}] checked"
 end
 
 def print_usage
