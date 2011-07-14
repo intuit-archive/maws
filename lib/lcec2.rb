@@ -230,15 +230,15 @@ class LcAws
                 }
      tagged = false
      
-     3.times do
+     5.times do
        begin
          @ec2.create_tags(tag_opts)
          tagged = true
          break
        rescue => ex
          puts "Exception creating tags."
-         # most likely needs more time to AWS to record the instanceID, so just pause a sec
-         sleep 1
+         # most likely needs more time to AWS to record the instanceID, so just pause a few secs
+         sleep 3
        end
      end
      return tagged

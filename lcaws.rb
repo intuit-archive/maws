@@ -271,7 +271,7 @@ def open_app_terminals(ecc, instances, args)
     cmd =  "ssh -i intuit-baseline.pem ea@#{app.dns_name}"
     puts "opening terminal #{counter} as: #{cmd}"
     `scripts/it #{cmd}`
-    sleep
+    sleep 1
     counter += 1
   end
 end
@@ -383,14 +383,17 @@ def validate_servers(ecc, instances, args)
   status = Array.new
   servers.each do |current_server|
     begin
+      printf "."
       #check one make sure the server has a private dns
       private_name = current_server.private_dns_name
       #check to make sure the server has a public dns
       public_name = current_server.dns_name
       #connect via ssh and run hostname to validate connection
       private_ping = system "ssh #{private_name} hostname > /dev/null 2>&1"
+      puts "Private Ping Failed for #{current_server.name}"
       #connect cia ssh and rub hostname on validate connection
       public_ping = system "ssh #{public_name} hostname > /dev/null 2>&1"
+      puts "Private Ping Failed for #{current_server.name}"
       #gather the data!! 
       status << [private_name, public_name, private_ping, public_ping]
     rescue
@@ -398,6 +401,7 @@ def validate_servers(ecc, instances, args)
       status << [private_name.to_s, public_name.to_s, private_ping.to_s, public_ping.to_s]
     end
   end
+  puts "."
   status.each { |a,b,c,d| puts a + "::" + b + "::" + c.to_s + "::" + d.to_s}
   puts "Validated complete: [#{servers.size}] checked"
 end
@@ -405,7 +409,7 @@ end
 def print_usage
  puts "USAGE: ruby lcaws.rb <command>"
  puts "where <command> is one of the following methods: \n"+
-       " create_envfile, create_web_proxy_config, create_database_configs, \n"+
+       " create_envfile, update_web_configs, update_database_configs, \n"+
        " start_apps, stop_apps, show_apps, open_app_terminals, \n" +
        " start_loadgens, stop_loadgens, open_loadgen_termials, \n"+
        " start_webs, stop_webs, show_webs, open_web_terminals\n"+
