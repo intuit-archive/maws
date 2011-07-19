@@ -319,7 +319,7 @@ def show_webs(ecc, instances, args)
   end
   webs = ecc.get_web_instances(instances, state)
   webs.each do |web|
-    puts web.name + " : " + web.dns_name + " : " + web.private_dns_name + " : " + web.state
+        puts web.name + " : " + web.state
   end
 end
 
@@ -391,7 +391,7 @@ def validate_servers(ecc, instances, args)
       #connect via ssh and run hostname to validate connection
       private_ping = system "ssh #{private_name} hostname > /dev/null 2>&1"
       puts "Private Ping Failed for #{current_server.name}"
-      #connect cia ssh and run hostname on validate connection
+      #connect cia ssh and rub hostname on validate connection
       public_ping = system "ssh #{public_name} hostname > /dev/null 2>&1"
       puts "Private Ping Failed for #{current_server.name}"
       #gather the data!! 
