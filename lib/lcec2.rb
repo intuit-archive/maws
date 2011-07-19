@@ -10,7 +10,7 @@ SECRET_ACCESS_KEY = ENV["AWS_SECRET_ACCESS_KEY"]
 # - these should be the AMI's that are the current standard for each server type
 DEFAULT_WEB_AMI = "ami-98d014f1"
 DEFAULT_APP_AMI = "ami-bd07c3d4"
-DEFAULT_LOADGEN_AMI = "ami-cb03c7a2"
+DEFAULT_LOADGEN_AMI = "ami-e130f488"
 
 class LcAws
   attr_accessor :ec2, :rds
@@ -186,7 +186,7 @@ class LcAws
             :min_count => 1,
             :max_count => 1,
             :security_group => "LoadGenGroup",
-            :instance_type => "m1.xlarge",
+            :instance_type => "m2.4xlarge",
             :availability_zone => zone,
             :monitoring_enabled => false
            }
