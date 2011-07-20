@@ -195,8 +195,11 @@ def update_app_configs(ecc, instances, args)
   
   puts search.size.to_s + " :search"
   puts services.size.to_s + " :services"
-  #TODO sort search and sort services
   
+  apps.sort! {|a,b| a.name[3..-1].to_i <=> b.name[3..-1].to_i}
+  search.sort! {|a,b| a.name[3..-1].to_i <=> b.name[3..-1].to_i}
+  services.sort! {|a,b| a.name[3..-1].to_i <=> b.name[3..-1].to_i}
+ 
   primary_post_server = "http://#{services[0].private_dns_name}:#\{SOLR_PORT\}/solr/posts"
   primary_tag_server =  "http://#{services[0].private_dns_name}:#\{SOLR_PORT\}/solr/tags"
   primary_user_server = "http://#{services[0].private_dns_name}:#\{SOLR_PORT\}/solr/users"
@@ -272,9 +275,9 @@ def update_app_configs(ecc, instances, args)
       puts "Exception writing file: #{ex.inspect}"
     end
   end
-  #upload_app_config(ecc, instances)
-  #cap "control:stop_unicorn", "amazon-perf"
-  #cap "control:start_unicorn", "amazon-perf"
+  upload_app_conf(ecc, instances)
+  cap "control:stop_unicorn", "amazon-perf"
+  cap "control:start_unicorn", "amazon-perf"
   
 end
 

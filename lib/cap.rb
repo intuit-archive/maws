@@ -85,6 +85,18 @@ def upload_database_yml(ecc, instances)
    cap "control:move_database_yml", "amazon-perf"
 end
 
+def upload_app_conf(ecc, instances)
+   #get active web servers...
+   app =  ecc.get_app_instances(instances, "running")
+   #individually upload vhost files
+   app.each do |x|
+      name = x.private_dns_name
+      `scp ../deploy/upload/#{name}/01_remote_dependencies.rb #{name}:.`
+   end
+   cap "control:move_app_conf", "amazon-perf"
+end
+
+
 private 
   
 def cap(command, community, server = nil)
