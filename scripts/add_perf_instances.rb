@@ -2,31 +2,35 @@
 
 require './lib/lcec2'
 
-
 ecc = LcAws.new
 
 # add 2 web, 12 app, 1 service, search, queue and cache to us-east1-b
-# ecc.add_web_instances(2, "us-east-1b", ["web01", "web02"])
-# ecc.add_app_instances(12, "us-east-1b", ["app001","app002","app003","app004","app005","app006","app007","app008","app009","app010","app011","app012"])
-# ecc.add_service_instances(1, "us-east-1b", ["services01"])
-# ecc.add_search_instances(1, "us-east-1b", ["search01"])
-# ecc.add_cache_instances(1, "us-east-1b", ["cache01"])
-# ecc.add_queue_instances(1, "us-east-1b", ["queue01"])
-# ecc.add_loadgen_instances(2, "us-east-1b", ["loadgen01","loadgen02"])
+ecc.add_web_instances(2, "us-east-1b", ["web01", "web02"])
+ecc.add_app_instances(12, "us-east-1b", ["app001","app002","app003","app004","app005","app006","app007","app008","app009","app010","app011","app012"])
+ecc.add_service_instances(1, "us-east-1b", ["services01"])
+ecc.add_search_instances(1, "us-east-1b", ["search01"])
+ecc.add_cache_instances(1, "us-east-1b", ["cache01"])
+ecc.add_queue_instances(1, "us-east-1b", ["queue01"])
+ecc.add_loadgen_instances(2, "us-east-1b", ["loadgen01","loadgen02"])
 
 # add 2 web, 12 app, 1 service, search, queue and cache to us-east1-c
-# ecc.add_web_instances(2, "us-east-1c", ["web03", "web04"])
-# ecc.add_app_instances(12, "us-east-1c", ["app013","app014","app015","app016","app017","app018","app019","app020", "app021", "app022", "app023", "app024"])
-# ecc.add_service_instances(1, "us-east-1c", ["services02"])
-# ecc.add_search_instances(1, "us-east-1c", ["search02"])
-# ecc.add_cache_instances(1, "us-east-1c", ["cache02"])
-# ecc.add_queue_instances(1, "us-east-1c", ["queue02"])
-# ecc.add_loadgen_instances(2, "us-east-1c", ["loadgen03","loadgen04"])
+ecc.add_web_instances(2, "us-east-1c", ["web03", "web04"])
+ecc.add_app_instances(12, "us-east-1c", ["app013","app014","app015","app016","app017","app018","app019","app020", "app021", "app022", "app023", "app024"])
+ecc.add_service_instances(1, "us-east-1c", ["services02"])
+ecc.add_search_instances(1, "us-east-1c", ["search02"])
+ecc.add_cache_instances(1, "us-east-1c", ["cache02"])
+ecc.add_queue_instances(1, "us-east-1c", ["queue02"])
+ecc.add_loadgen_instances(2, "us-east-1c", ["loadgen03","loadgen04"])
 
+puts "waiting for AWS to catch-up "
+20.times do
+  printf "."
+  sleep 1
+end
+puts "ok, now validating servers are running and accessible"
 
-sleep 10
-
-# ensure they were added
+# check that they were added
+system "ruby lcaws.rb validate_servers skip_private_ip"
 
 instances = ecc.get_instances
 apps = ecc.get_app_instances(instances, "running")
