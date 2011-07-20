@@ -215,6 +215,9 @@ def show_availability_zones(ecc, instances, args)
 end
 
 def validate_servers(ecc, instances, args)
+  skip_private_ip = args[1] == "skip_private_ip"
+  puts "skipping private-ip check" if skip_private_ip
+  
 #a check validation for all servers
   web = ecc.get_web_instances(instances, "running")
   app = ecc.get_app_instances(instances, "running")
@@ -230,9 +233,11 @@ def validate_servers(ecc, instances, args)
       public_name = current_server.dns_name
  
       #connect via ssh and run hostname to validate connection
-      private_ping = system "ssh #{private_name} hostname > /dev/null 2>&1"
-      puts "Private Ping failed for #{current_server.name}" if !private_ping
- 
+      unless skip_private_ip
+        private_ping = system "ssh #{private_name} hostname > /dev/null 2>&1"
+        puts "Private Ping failed for #{current_server.name}" if !private_ping
+      end
+      
       #connect cia ssh and rub hostname on validate connection
       public_ping = system "ssh #{public_name} hostname > /dev/null 2>&1"
       puts "Public Ping Failed for #{current_server.name}" if !public_ping
