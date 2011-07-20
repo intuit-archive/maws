@@ -9,8 +9,12 @@ SECRET_ACCESS_KEY = ENV["AWS_SECRET_ACCESS_KEY"]
 # default AMI's to use if no other AMI is specified
 # - these should be the AMI's that are the current standard for each server type
 DEFAULT_WEB_AMI = "ami-98d014f1"
-DEFAULT_APP_AMI = "ami-bd07c3d4"
-DEFAULT_LOADGEN_AMI = "ami-cb03c7a2"
+DEFAULT_APP_AMI = "ami-0fce0966"
+DEFAULT_SERVICE_AMI = DEFAULT_APP_AMI
+DEFAULT_SEARCH_AMI = "ami-1fb57276"
+DEFAULT_QUEUE_AMI = "ami-33cd0a5a"
+DEFAULT_CACHE_AMI = "ami-67cc0b0e"
+DEFAULT_LOADGEN_AMI = "ami-e130f488"
 
 class LcAws
   attr_accessor :ec2, :rds
@@ -191,6 +195,54 @@ class LcAws
     add_instances(num,names,'app',opts)
   end
   
+  def add_service_instances(num, zone, names, ami = DEFAULT_SERVICE_AMI)
+    opts = {:image_id => ami, 
+            :min_count => 1,
+            :max_count => 1,
+            :security_group => "AppGroup",
+            :instance_type => "m1.xlarge",
+            :availability_zone => zone,
+            :monitoring_enabled => true
+           }
+    add_instances(num,names,'service',opts)
+  end  
+  
+  def add_search_instances(num, zone, names, ami = DEFAULT_SEARCH_AMI)
+    opts = {:image_id => ami, 
+            :min_count => 1,
+            :max_count => 1,
+            :security_group => "AppGroup",
+            :instance_type => "m1.xlarge",
+            :availability_zone => zone,
+            :monitoring_enabled => true
+           }
+    add_instances(num,names,'search',opts)
+  end
+  
+  def add_cache_instances(num, zone, names, ami = DEFAULT_CACHE_AMI)
+    opts = {:image_id => ami, 
+            :min_count => 1,
+            :max_count => 1,
+            :security_group => "AppGroup",
+            :instance_type => "m1.xlarge",
+            :availability_zone => zone,
+            :monitoring_enabled => true
+           }
+    add_instances(num,names,'cache',opts)
+  end  
+  
+  def add_queue_instances(num, zone, names, ami = DEFAULT_QUEUE_AMI)
+    opts = {:image_id => ami, 
+            :min_count => 1,
+            :max_count => 1,
+            :security_group => "AppGroup",
+            :instance_type => "m1.xlarge",
+            :availability_zone => zone,
+            :monitoring_enabled => true
+           }
+    add_instances(num,names,'queue',opts)
+  end  
+
   def add_loadgen_instances(num, zone, names, ami = DEFAULT_LOADGEN_AMI)
     opts = {:image_id => ami, 
             :min_count => 1,
@@ -202,6 +254,7 @@ class LcAws
            }
     add_instances(num,names,'loadgen',opts)
   end
+
   
   def show_current_region
     # TODO: implement this somehow...
