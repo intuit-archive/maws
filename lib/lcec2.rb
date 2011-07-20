@@ -42,7 +42,7 @@ class LcAws
         instances = i["instancesSet"]["item"]
         instances.each do |instance|
           new_instance = Ec2Instance.new(instance)
-          all_instances << new_instance if (state.nil? || instance.state == state)
+          all_instances << new_instance if (state.nil? || new_instance.state == state)
 
           groups = i["groupSet"]["item"]
           new_instance.group = groups[0]['groupId']
