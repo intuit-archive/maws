@@ -187,12 +187,13 @@ def update_database_configs(ecc, instances, args)
     end
   end
   upload_database_yml(ecc, instances)
-  cap "control:stop_unicorn", "amazon-perf"
-  cap "control:start_unicorn", "amazon-perf"
+  #cap "control:stop_unicorn", "amazon-perf"
+  #cap "control:start_unicorn", "amazon-perf"
 end
 
 def update_app_configs(ecc, instances, args)
   #prep apps
+  update_database_configs(ecc, instances, args)
   apps = ecc.get_app_layer_instances(instances, "running")
   
   #prep cache
@@ -308,6 +309,7 @@ def update_app_configs(ecc, instances, args)
   upload_app_conf(ecc, instances)
   cap "control:stop_unicorn", "amazon-perf"
   cap "control:start_unicorn", "amazon-perf"
-  
+  cap "control:stop_search", "amazon-perf"
+  cap "control:start_search", "amazon-perf" 
 end
 
