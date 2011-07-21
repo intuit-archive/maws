@@ -206,6 +206,18 @@ def open_web_terminals(ecc, instances, args)
   end
 end
 
+def open_terminal(ecc, instances, args)
+  name = args[1]
+  instances.each do |s|
+    puts s.name
+    if s.name == name && s.state == "running"
+      cmd =  "ssh -i intuit-baseline.pem ea@#{s.dns_name}"
+      puts "opening terminal for #{s.name}: #{cmd}"
+      `scripts/it #{cmd}`
+    end
+  end
+end
+
 def show_dbs(ecc, instances, args)
   puts "Current Database Instances:"
   dbs = ecc.get_rds_instances
@@ -223,6 +235,9 @@ def show_availability_zones(ecc, instances, args)
 end
 
 def validate_servers(ecc, instances, args)
+  skip_private_ip = args[1] == "skip_private_ip"
+  puts "skipping private-ip check" if skip_private_ip
+  
 #a check validation for all servers
   web = ecc.get_web_instances(instances, "running")
   app_layer = ecc.get_app_layer_instances(instances, "running")
@@ -239,12 +254,14 @@ def validate_servers(ecc, instances, args)
       public_name = current_server.dns_name
  
       #connect via ssh and run hostname to validate connection
-      private_ping = system "ssh #{private_name} hostname > /dev/null 2>&1"
-      puts "Private Ping failed for #{current_server.name}" if !private_ping
- 
+      unless skip_private_ip
+        private_ping = system "ssh #{private_name} hostname > /dev/null 2>&1"
+        puts "Private Ping failed for #{current_server.name}" if !private_ping
+      end
+      
       #connect cia ssh and rub hostname on validate connection
       public_ping = system "ssh #{public_name} hostname > /dev/null 2>&1"
-      puts "Private Ping Failed for #{current_server.name}" if !public_ping
+      puts "Public Ping Failed for #{current_server.name}" if !public_ping
       #gather the data!! 
       status << [private_name, public_name, private_ping, public_ping]
     rescue
@@ -264,7 +281,7 @@ def print_usage
        " start_apps, stop_apps, show_apps, open_app_terminals, \n" +
        " start_loadgens, stop_loadgens, open_loadgen_termials, \n"+
        " start_webs, stop_webs, show_webs, open_web_terminals\n"+
-       " show_dbs, list_instances"
+       " show_dbs, list_instances, validate_servers"
 end
 
 ###############
