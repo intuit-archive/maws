@@ -129,7 +129,14 @@ class LcAws
   def get_search_instances(instances = nil, state = nil)
     get_instances_by_name("search", instances, state)
   end
-  
+
+  def get_app_layer_instances(instance = nil, state = "running")
+   app =  get_instances_by_name("app", instance, state)
+   service = get_instances_by_name("service", instance, state)
+   search = get_instances_by_name("search", instance, state)
+   servers = app | service | search
+  end
+
   #
   # stopping / starting
   #

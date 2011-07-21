@@ -213,8 +213,9 @@ def validate_servers(ecc, instances, args)
   
 #a check validation for all servers
   web = ecc.get_web_instances(instances, "running")
-  app = ecc.get_app_instances(instances, "running")
-  servers = web | app
+  app_layer = ecc.get_app_layer_instances(instances, "running")
+  servers = web | app_layer
+
   puts "Validating Servers"
   status = Array.new
   servers.each do |current_server|
@@ -269,5 +270,6 @@ else
     send(ARGV[0],ecc,instances, ARGV) 
   rescue => ex
     puts "Error running command: #{ex.inspect}"
+    puts ex.backtrace
   end
 end

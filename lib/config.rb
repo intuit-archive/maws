@@ -83,7 +83,11 @@ def get_database_configs(ecc, instances, args)
   slave_config = Array.new
 
   apps = ecc.get_app_instances(instances, "running")
+  service = ecc.get_service_instances(instances, "running")
+  search = ecc.get_search_instances(instances, "running")
+
   dbs = ecc.get_rds_instances_by_name("slavedb")
+  servicedbs = ecc.get_rds_instances_by_name("servicedb")[0]
   masterdb = ecc.get_rds_instances_by_name("masterdb")[0]
   session = ecc.get_rds_instances_by_name("session")[0]
 
@@ -108,6 +112,16 @@ def get_database_configs(ecc, instances, args)
         set_counter = 0
      end
      set_counter = set_counter + 1
+  end
+
+  #point the service machines to the service slave
+  service.each do |service_inst|
+    database_yml_config << [service_inst.private_dns_name, servicedbs.endpoint_address, masterdb.endpoint_address, session.endpoint_address]
+  end
+
+  #point the search machine to the service slave
+  search.each do |search_inst|
+    database_yml_config << [search_inst.private_dns_name, servicedbs.endpoint_address, masterdb.endpoint_address, session.endpoint_address]
   end
 
   #database_yml_config.sort! {|a,b| a.name[3..-1].to_i <=> b.name[3..-1].to_i}
@@ -183,7 +197,7 @@ end
 
 def update_app_configs(ecc, instances, args)
   #prep apps
-  apps = ecc.get_app_instances(instances, "running")
+  apps = ecc.get_app_layer_instances(instances, "running")
   
   #prep cache
   cache = ecc.get_cache_instances(instances, "running")
@@ -232,7 +246,7 @@ def update_app_configs(ecc, instances, args)
     #server_name: directory under upload_dir where an individual server will get its 'stuff', created when the ec2 info is parsed
     #file_name: the name of the file you are creating and will get uploaded
     server_name = server.private_dns_name
-    file_name = "01_remote_dependencies.rb"
+    file_name = "remote_dependencies.rb"
     file_dir = "#{CAPISTRANO_UPLOAD_DIR}/#{server_name}"
     conf_file_name = "#{file_dir}/#{file_name}"
 
@@ -243,9 +257,23 @@ def update_app_configs(ecc, instances, args)
       conf_file.puts "#intializer remote dependencies file for app server #{server_name} (#{Time.now})\n\n"
       #IDManager
       conf_file.puts "#IDMANAGER"
+      #conf_file.puts "ACCESS_MANAGER_URL = \"https://idmanager.ie.intuit.com/IDManager/services/AccessManagerSOAP\""
+      #conf_file.puts "ACCOUNT_MANAGER_URL = \"https://idmanager.ie.intuit.com/IDManager/services/AccountManagerSOAP\""
+      #conf_file.puts "TICKET_SERVER_URL = \".ticket.qbn.ie.intuit.com\"\n\n"
+      conf_file.puts "AUTH_ENV = \".ptc\""
+      conf_file.puts "QBN_ENV=\".ptcfe\""
       conf_file.puts "ACCESS_MANAGER_URL = \"https://idmanager.ie.intuit.com/IDManager/services/AccessManagerSOAP\""
       conf_file.puts "ACCOUNT_MANAGER_URL = \"https://idmanager.ie.intuit.com/IDManager/services/AccountManagerSOAP\""
+      conf_file.puts "ACCOUNT_MANAGER_URN = \"http://spc.intuit.com/idmanager/account/\""
+      conf_file.puts "ACCESS_MANAGER_URN  = \"http://spc.intuit.com/idmanager/access/\""
       conf_file.puts "TICKET_SERVER_URL = \".ticket.qbn.ie.intuit.com\"\n\n"
+      conf_file.puts "FORGOT_URL = \"https://ttpmtqa.turbotax.intuit.com/commerce/account/secure/community_landing_page.jsp\""
+      #FORGOT_USERID_LINK   = "https://ttpmtqa.turbotax.intuit.com/commerce/account/secure/forgot_login.jsp"
+      #FORGOT_PASSWORD_LINK = "https://ttpmtqa.turbotax.intuit.com/commerce/account/secure/forgot_password.jsp"
+      conf_file.puts "SIGNIN_HELP_LINK = \"https://ttpmtqa.turbotax.intuit.com/commerce/common/fragments/popup/esd/popup.jsp?content=signinhelpi\""
+      conf_file.puts "OTHERSITE_LIST_LINK  =\"https://ttpmtqa.turbotax.intuit.com/commerce/common/fragments/popup/esd/popup.jsp?content=sitesusingaccount\""
+      conf_file.puts "\n"
+      #MEMCACHE
       conf_file.puts "#Memcache\n\n"
       conf_file.puts "MEMCACHED_ADDR = [#{cache_list}]"
       conf_file.puts "\n"
@@ -272,7 +300,9 @@ def update_app_configs(ecc, instances, args)
       conf_file.puts "MAIL_ADDRESS=\"mail.intuit.com\""
       conf_file.puts "MAIL_PORT=25"
       conf_file.puts "MAIL_DOMAIN=\"www.turbotax.com\""
-      
+      conf_file.puts "TTO_LINK = \"https://ttolabqa13.turbotaxonline.intuit.com\""
+      conf_file.puts "IDO_LINK = \"http://idoqaws.intuit.com\""
+      conf_file.puts "TTLC_LINK = \"https://ciaperfws1.intuit.com/app/full_page\""
       conf_file.close
       puts `cat #{conf_file_name}`
     rescue => ex
