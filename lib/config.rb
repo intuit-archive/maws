@@ -1,5 +1,9 @@
 #Create the files needed for deployment...
 
+#TODO: This needs refactoring for multiple communities but pulling it out for temp security.
+DB_USERNAME = ENV["DB_USERNAME"]
+DB_PASSWORD = ENV["DB_PASSWORD"]
+
 #all remote dependencies will go here.
 def get_web_proxy_configs(ecc, instances, args)
   ws_num = 1
