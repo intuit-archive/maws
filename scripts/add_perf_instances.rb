@@ -23,9 +23,9 @@ ecc.add_queue_instances(1, "us-east-1c", ["queue02"])
 ecc.add_loadgen_instances(2, "us-east-1c", ["loadgen03","loadgen04"])
 
 puts "waiting for AWS to catch-up "
-20.times do
-  printf "."
-  sleep 1
+5.times do
+  puts "."
+  sleep 5
 end
 puts "ok, now validating servers are running and accessible"
 

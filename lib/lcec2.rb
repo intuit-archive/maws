@@ -212,7 +212,7 @@ class LcAws
             :min_count => 1,
             :max_count => 1,
             :security_group => "AppGroup",
-            :instance_type => "m1.xlarge",
+            :instance_type => "m2.2xlarge",
             :availability_zone => zone,
             :monitoring_enabled => true
            }
@@ -248,7 +248,7 @@ class LcAws
             :min_count => 1,
             :max_count => 1,
             :security_group => "LoadGenGroup",
-            :instance_type => "m1.xlarge",
+            :instance_type => "m2.4xlarge",
             :availability_zone => zone,
             :monitoring_enabled => false
            }
