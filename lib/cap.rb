@@ -1,4 +1,7 @@
-#lcec2 wrappers for cap commands
+#lcec2 support for capistrano commands
+
+CAPISTRANO_ENVFILE_DIR = "../deploy/envfiles"
+CAPISTRANO_UPLOAD_DIR = "../deploy/upload"
 
 #cap control:check_all_ok                      # Checks /app/check_response on...
 #cap control:create_search_indices             # Create the search indices
@@ -19,6 +22,37 @@
 #cap control:stop_unicorn                      # Stop Unicorn
 
 #we will need to pass the community in the future. Default is set for dev purposes.
+
+#this will create the capistrano envfile for the current EC2 environment so we can send commands
+def create_envfile(ecc, instances, args)
+  args[1].nil? ? community = "amazon-perf" : community = args[1]
+  #prep the envfile
+  puts "Creating envfile for #{community}:"
+  envfile_name = "#{CAPISTRANO_ENVFILE_DIR}/#{community}.rb"
+  File.delete(envfile_name) if File.exists?( envfile_name)
+  #TODO: some exception handling here cause its good to the last drop....
+  envfile = File.new(envfile_name, "w")
+  web = ecc.get_web_instances(instances, "running")
+  app = ecc.get_app_instances(instances, "running")
+  
+  envfile.puts "set :community, '#{community}'"
+  web_str = ""
+  web.each_with_index do |i, index|
+     web_str = web_str + "\"" + i.private_dns_name + "\"," unless i.private_dns_name.nil?
+  end
+  web_str.chomp!(",")
+  app_str = ""
+  app.each_with_index do |i, index|
+     app_str = app_str + "\"" + i.private_dns_name + "\"," unless i.private_dns_name.nil?
+  end
+  app_str.chomp!(",")
+  envfile.puts "role :web, " + web_str
+  envfile.puts "role :app, " + app_str
+  envfile.close
+  puts "Finished creating envfile in #{envfile_name}"
+  puts `cat #{envfile_name}`
+end
+
 
 def check_all_ok(ecc, instances, args)
   args[1].nil? ? community = "amazon-perf" : community = args[1]

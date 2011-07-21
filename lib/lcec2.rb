@@ -9,12 +9,21 @@ SECRET_ACCESS_KEY = ENV["AWS_SECRET_ACCESS_KEY"]
 # default AMI's to use if no other AMI is specified
 # - these should be the AMI's that are the current standard for each server type
 DEFAULT_WEB_AMI = "ami-98d014f1"
-DEFAULT_APP_AMI = "ami-0fce0966"
-DEFAULT_SERVICE_AMI = DEFAULT_APP_AMI
-DEFAULT_SEARCH_AMI = "ami-1fb57276"
-DEFAULT_QUEUE_AMI = "ami-33cd0a5a"
+DEFAULT_APP_AMI = "ami-93e720fa"
+DEFAULT_SERVICE_AMI = DEFAULT_APP_AMI # service hosts get the same image as an app host for now
+DEFAULT_SEARCH_AMI = DEFAULT_APP_AMI # service hosts get the same image as an app host for now
+DEFAULT_QUEUE_AMI = "ami-97e720fe"
 DEFAULT_CACHE_AMI = "ami-67cc0b0e"
 DEFAULT_LOADGEN_AMI = "ami-e130f488"
+
+DEFAULT_INSTANCE_TYPE = "m1.xlarge"
+DEFAULT_WEB_INSTANCE_TYPE = DEFAULT_INSTANCE_TYPE
+DEFAULT_APP_INSTANCE_TYPE = "c1.xlarge"
+DEFAULT_SERVICE_INSTANCE_TYPE = DEFAULT_INSTANCE_TYPE
+DEFAULT_SEARCH_INSTANCE_TYPE = "m2.2xlarge"
+DEFAULT_QUEUE_INSTANCE_TYPE = DEFAULT_INSTANCE_TYPE
+DEFAULT_CACHE_INSTANCE_TYPE = DEFAULT_INSTANCE_TYPE
+DEFAULT_LOADGEN_INSTANCE_TYPE = "m2.4xlarge"
 
 class LcAws
   attr_accessor :ec2, :rds
@@ -113,6 +122,10 @@ class LcAws
     get_instances_by_name("cache", instances, state)
   end
   
+  def get_queue_instances(instances = nil, state = nil)
+    get_instances_by_name("queue", instances, state)
+  end
+  
   def get_search_instances(instances = nil, state = nil)
     get_instances_by_name("search", instances, state)
   end
@@ -127,6 +140,7 @@ class LcAws
   #
   # stopping / starting
   #
+  
   def stop_instances(instances)
     instances_to_stop = Array.new
     
@@ -155,6 +169,10 @@ class LcAws
     end
   end
   
+  #
+  # starting / stopping of specific types
+  #
+  
   def start_app_servers
     start_instances(get_app_instances)
   end
@@ -179,12 +197,48 @@ class LcAws
     stop_instances(get_loadgen_instances)
   end
   
+  def start_service_servers
+    start_instances(get_service_instances)
+  end
+  
+  def stop_service_servers
+    stop_instances(get_service_instaces)
+  end
+  
+  def start_search_servers
+    start_instances(get_search_instances)
+  end
+  
+  def stop_search_servers
+    stop_instances(get_search_instances)
+  end
+  
+  def start_cache_servers
+    start_instances(get_cache_instances)
+  end
+  
+  def stop_cache_servers
+    stop_instances(get_cache_instances)
+  end
+  
+  def start_queue_servers
+    start_instances(get_queue_instances)
+  end
+  
+  def stop_queue_servers
+    stop_instances(get_queue_instances)
+  end
+  
+  # 
+  # specific instance creation methods
+  #
+  
   def add_web_instances(num, zone, names, ami = DEFAULT_WEB_AMI)
     opts = {:image_id => ami, 
             :min_count => 1,
             :max_count => 1,
             :security_group => "WebGroup",
-            :instance_type => "m1.xlarge",
+            :instance_type => DEFAULT_WEB_INSTANCE_TYPE,
             :availability_zone => zone,
             :monitoring_enabled => true
            }
@@ -196,7 +250,7 @@ class LcAws
             :min_count => 1,
             :max_count => 1,
             :security_group => "AppGroup",
-            :instance_type => "c1.xlarge",
+            :instance_type => DEFAULT_APP_INSTANCE_TYPE,
             :availability_zone => zone,
             :monitoring_enabled => true
            }
@@ -220,7 +274,7 @@ class LcAws
             :min_count => 1,
             :max_count => 1,
             :security_group => "AppGroup",
-            :instance_type => "m2.2xlarge",
+            :instance_type => DEFAULT_SEARCH_INSTANCE_TYPE,
             :availability_zone => zone,
             :monitoring_enabled => true
            }
@@ -232,7 +286,7 @@ class LcAws
             :min_count => 1,
             :max_count => 1,
             :security_group => "AppGroup",
-            :instance_type => "m1.xlarge",
+            :instance_type => DEFAULT_CACHE_INSTANCE_TYPE,
             :availability_zone => zone,
             :monitoring_enabled => true
            }
@@ -244,7 +298,7 @@ class LcAws
             :min_count => 1,
             :max_count => 1,
             :security_group => "AppGroup",
-            :instance_type => "m1.xlarge",
+            :instance_type => DEFAULT_QUEUE_INSTANCE_TYPE,
             :availability_zone => zone,
             :monitoring_enabled => true
            }
@@ -256,7 +310,7 @@ class LcAws
             :min_count => 1,
             :max_count => 1,
             :security_group => "LoadGenGroup",
-            :instance_type => "m2.4xlarge",
+            :instance_type => DEFAULT_LOADGEN_INSTANCE_TYPE,
             :availability_zone => zone,
             :monitoring_enabled => false
            }
