@@ -54,7 +54,7 @@ class LcAws
     filtered_instances = Array.new
     all_instances.each do |instance|
       # check if the name matches AND the state matches the filter provided
-      if instance.name.include?(name_filter) && (state.nil? || instance.state == state)
+      if !instance.name.nil? && instance.name.include?(name_filter) && (state.nil? || instance.state == state)
         filtered_instances << instance 
       end
     end
@@ -112,6 +112,14 @@ class LcAws
   def get_search_instances(instances = nil, state = nil)
     get_instances_by_name("search", instances, state)
   end
+
+  def get_app_layer_instances(instance = nil, state = "running")
+   app =  get_instances_by_name("app", instance, state)
+   service = get_instances_by_name("service", instance, state)
+   search = get_instances_by_name("search", instance, state)
+   servers = app | service | search
+  end
+
   #
   # stopping / starting
   #
