@@ -102,7 +102,15 @@ def stat_unicorn(ecc, instances, args)
   args[1].nil? ? community = "amazon-perf" : community = args[1]
   cap "control:stat_unicorn", community
 end
+def stop_search(ecc, instances, args)
+  args[1].nil? ? community = "amazon-perf" : community = args[1]
+  cap "control:stop_search", community
+end
 
+def start_search(ecc, instances, args)
+  args[1].nil? ? community = "amazon-perf" : community = args[1]
+  cap "control:start_search", community
+end
 
 def start_memcached(ecc, instances, args)
   args[1].nil? ? community = "amazon-perf" : community = args[1]
