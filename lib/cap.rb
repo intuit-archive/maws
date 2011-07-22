@@ -34,6 +34,8 @@ def create_envfile(ecc, instances, args)
   envfile = File.new(envfile_name, "w")
   web = ecc.get_web_instances(instances, "running")
   app = ecc.get_app_instances(instances, "running")
+  search = ecc.get_search_instances(instances, "running")
+  service = ecc.get_service_instances(instances, "running")
   
   envfile.puts "set :community, '#{community}'"
   web_str = ""
@@ -41,18 +43,35 @@ def create_envfile(ecc, instances, args)
      web_str = web_str + "\"" + i.private_dns_name + "\"," unless i.private_dns_name.nil?
   end
   web_str.chomp!(",")
+
   app_str = ""
   app.each_with_index do |i, index|
      app_str = app_str + "\"" + i.private_dns_name + "\"," unless i.private_dns_name.nil?
   end
   app_str.chomp!(",")
+ 
+  search_str = ""
+  search.each_with_index do |i, index|
+     search_str = search_str + "\"" + i.private_dns_name + "\"," unless i.private_dns_name.nil?
+  end
+  search_str.chomp!(",")
+
+  service_str = ""
+  service.each_with_index do |i, index|
+     service_str = service_str + "\"" + i.private_dns_name + "\"," unless i.private_dns_name.nil?
+  end
+  service_str.chomp!(",")
+
   envfile.puts "role :web, " + web_str
   envfile.puts "role :app, " + app_str
+  envfile.puts "role :search, " + search_str
+  envfile.puts "role :service, " + service_str
   envfile.close
+
+
   puts "Finished creating envfile in #{envfile_name}"
   puts `cat #{envfile_name}`
 end
-
 
 def check_all_ok(ecc, instances, args)
   args[1].nil? ? community = "amazon-perf" : community = args[1]
