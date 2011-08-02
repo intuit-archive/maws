@@ -117,6 +117,16 @@ def stop_services(ecc, instances, args)
   puts "Done."
 end
 
+def show_services(ecc, instances, args)
+  if args[1] != nil
+    state = args[1]
+  end
+  svcs = ecc.get_service_instances(instances, state)
+  svcs.each do |s|
+        puts s.name + " : " + s.state
+  end
+end
+
 def start_searches(ecc, instances, args)
   puts "Starting all search servers..."
   ecc.start_search_servers
@@ -127,6 +137,16 @@ def stop_searches(ecc, instances, args)
   puts "Stopping all search servers..."
   ecc.stop_search_servers
   puts "Done."
+end
+
+def show_searches(ecc, instances, args)
+  if args[1] != nil
+    state = args[1]
+  end
+  searches = ecc.get_search_instances(instances, state)
+  searches.each do |s|
+        puts s.name + " : " + s.state
+  end
 end
 
 def start_queues(ecc, instances, args)
@@ -141,8 +161,36 @@ def stop_queues(ecc, instances, args)
   puts "Done."
 end
 
+def show_queues(ecc, instances, args)
+  if args[1] != nil
+    state = args[1]
+  end
+  queues = ecc.get_queue_instances(instances, state)
+  queues.each do |s|
+        puts s.name + " : " + s.state
+  end
+end
+
 def start_caches(ecc, instances, args)
-  puts "Starting all "
+  puts "Starting all cache servers..."
+  ecc.start_cache_servers
+  puts "Done."
+end
+
+def stop_caches(ecc, instances, args)
+  puts "Stopping all cache servers..."
+  ecc.stop_cache_servers
+  puts "Done."
+end
+
+def show_caches(ecc, instances, args)
+  if args[1] != nil
+    state = args[1]
+  end
+  caches = ecc.get_search_instances(instances, state)
+  caches.each do |s|
+        puts s.name + " : " + s.state
+  end
 end
 
 def scp_loadgen_results(ecc, instances, args)
