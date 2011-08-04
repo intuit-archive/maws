@@ -1,11 +1,24 @@
 GEM
+  remote: http://rubygems.org/
   specs:
-    amazon-ec2 (0.9.17)
-      xml-simple (>= 1.0.12)
-    xml-simple (1.0.16)
+    aws-sdk (1.0.3)
+      httparty (~> 0.7)
+      json (~> 1.4)
+      nokogiri (>= 1.4.4)
+      uuidtools (~> 2.1)
+    commander (4.0.4)
+      highline (>= 1.5.0)
+    crack (0.1.8)
+    highline (1.6.2)
+    httparty (0.7.8)
+      crack (= 0.1.8)
+    json (1.5.3)
+    nokogiri (1.5.0)
+    uuidtools (2.1.2)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
-  amazon-ec2 (>= 0.9.17)
+  aws-sdk
+  commander

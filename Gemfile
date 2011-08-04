@@ -1,2 +1,4 @@
+source :rubygems
 
-gem 'amazon-ec2', '>= 0.9.17'
+gem 'aws-sdk'
+gem 'commander'
