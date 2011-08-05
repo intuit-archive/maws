@@ -1,4 +1,3 @@
 source :rubygems
 
-gem 'aws-sdk'
-gem 'commander'
+gem 'right_aws'
