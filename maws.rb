@@ -12,6 +12,5 @@ ROLES_PATH = BASE_PATH + '/config/roles'
 COMMANDS_PATH = BASE_PATH + '/lib/commands'
 
 cp = CommandParser.new(PROFILES_PATH, ROLES_PATH,COMMANDS_PATH)
-# cp.load_profile_config
-# cp.load_roles_config
+cp.parse_and_load
 cp.run!

@@ -1,6 +1,7 @@
 require 'lib/command'
 
 class Test < Command
-  def add_specific_options(p)
+  def run!
+    puts "test command says 'test'"
   end
 end

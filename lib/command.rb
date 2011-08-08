@@ -1,7 +1,13 @@
 class Command
+  attr_accessor :options
+
   def initialize(profile, roles)
     @profile = profile
     @roles = roles
+  end
+  
+  def run!
+    puts "generic command does nothing"
   end
   
   def add_generic_options(parser)
@@ -12,6 +18,5 @@ class Command
   end
   
   def add_specific_options(parser)
-    raise "Not implemented"
   end
 end
