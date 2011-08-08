@@ -1,6 +1,7 @@
 GEM
   remote: http://rubygems.org/
   specs:
+    hashie (1.1.0)
     right_aws (2.1.0)
       right_http_connection (>= 1.2.5)
     right_http_connection (1.3.0)
@@ -9,4 +10,5 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  hashie
   right_aws

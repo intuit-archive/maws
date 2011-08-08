@@ -1,0 +1,5 @@
+web: 
+    service: ec2
+
+masterdb: 
+    service: rds
