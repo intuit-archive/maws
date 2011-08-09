@@ -1,11 +1,27 @@
+class MawsLogger
+  def error str
+    $stderr.puts "[ERROR]: #{str}" 
+  end
+
+  def warn str
+    puts "[warning]: #{str}" 
+  end
+  
+  def info str
+    puts str
+  end
+end
+
+$logger ||= MawsLogger.new
+
 def info str
-  puts str
+  $logger.info str
 end
 
 def error str
-  $stderr.puts "[ERROR]: #{str}" 
+  $logger.error str
 end
 
 def warn str
-  puts "[warning]: #{str}" 
+  $logger.warn str
 end
