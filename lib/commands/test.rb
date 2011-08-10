@@ -11,7 +11,9 @@ class Test < Command
     @ec2 = @connection.ec2
     @rds = @connection.rds
 
-    ap @ec2.describe_instances
+    # ap @ec2.describe_instances
     ap @rds.describe_db_instances
+
+    # puts @ec2.describe_regions
   end
 end

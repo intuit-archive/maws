@@ -1,1 +1,37 @@
 roles: 'lc'
+web:
+    count: 3
+    has_multiple:
+        role: app
+        count: 12
+    config:
+        template: 'proxy.conf'
+        copy_to_location: '/etc/httpd/conf/proxy.conf'
+        params:
+            balancer: web
+            balancer_members: 'web.apps'
+
+masterdb:
+    count: 1
+    db_name: 'cia_prod'
+    has_all:
+        role: app
+    has_multiple:
+        role: slavedb
+        count: 4
+
+slavedb:
+    has_multiple:
+        role: app
+        count: 9
+
+app:
+    config:
+        template: 'database.yml.erb'
+        copy_to_location: '.'
+        copy_cap_command: 'control:move_database_yml'
+        params:
+            server: app
+            masterdb: masterdb
+            slavedb: slavedb
+

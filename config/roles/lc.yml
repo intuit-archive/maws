@@ -1,5 +1,31 @@
-web: 
+web:
     service: ec2
+    image_id: 'ami-c7c99982'
+    instance_type: 't1.micro'
+    security_group:
+        - default
+    user_data: 'abc123'
 
-masterdb: 
+app:
+    service: ec2
+    image_id: 'ami-c7c99982'
+    instance_type: 't1.micro'
+    security_group:
+        - default
+    user_data: 'APPDATA'
+
+masterdb:
     service: rds
+    instance_class: 'db.m1.small'
+    allocated_storage: 6
+    master_username: 'user'
+    master_password: 'pass'
+    db_name:
+    db_security_groups:
+        - default
+
+slavedb:
+    service: rds_read_replica
+    source_role: masterdb
+    instance_class: 'db.m1.small'
+

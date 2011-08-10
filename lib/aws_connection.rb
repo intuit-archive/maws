@@ -6,13 +6,15 @@ class AwsConnection
   def initialize(keyid, key)
     @access_key_id = keyid
     @secret_key = key
+
+    @params = {:region => 'us-west-1', :logger => $logger}
   end
 
   def ec2
-    @ec2 ||= RightAws::Ec2.new(@access_key_id, @secret_key, {:logger => $logger})
+    @ec2 ||= RightAws::Ec2.new(@access_key_id, @secret_key, @params.dup)
   end
 
   def rds
-    @rds ||= RightAws::RdsInterface.new(@access_key_id, @secret_key, {:logger => $logger})
+    @rds ||= RightAws::RdsInterface.new(@access_key_id, @secret_key, @params.dup)
   end
 end
