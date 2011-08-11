@@ -1,37 +1,71 @@
 roles: 'lc'
+lanes: 2
+
+loadbalancer:
+    count: 2
+    scope: region
+    configs:
+        -
+            template: loadbalancer.config
+            web_servers:
+                select_many:
+                    role: web
+                    scope: region
+queue:
+    count: 2
+    scope: zone
+
+
 web:
     count: 3
-    has_multiple:
-        role: app
-        count: 12
-    config:
-        template: 'proxy.conf'
-        copy_to_location: '/etc/httpd/conf/proxy.conf'
-        params:
-            balancer: web
-            balancer_members: 'web.apps'
+    scope: lane
+    configs:
+        -
+          template: '/etc/httpd/conf/proxy.conf'
+          copy_to_location: '/etc/httpd/conf/proxy.conf'
+          balancer: self
+          balancer_members:
+              select_many:
+                  role: app
+                  # scope: zone
+                  # count: all
+                  # distribute: all | split
+                  count: 12
+
+        -
+          template: 'vhosts'
+          copy_to_location: '/etc/path/to/vhosts'
+          server_aliases: ''
+          community_name: 'turbotax'
+          environment: 'perf'
+          public_access: true
+          force_nonstatic_ssl: true
+          deploy_version: '1'
+app:
+    count: 36
+    scope: lane
+    configs:
+        -
+            template: 'database.yml'
+            copy_to_location: '.'
+            copy_cap_command: 'control:move_database_yml'
+            server: self
+            masterdb:
+                select_one: masterdb
+            slavedb:
+                select_one:
+                    role: slavedb
+                    group: true # default false
+                    # scope: zone
 
 masterdb:
     count: 1
+    scope: region
     db_name: 'cia_prod'
-    has_all:
-        role: app
-    has_multiple:
-        role: slavedb
-        count: 4
+
 
 slavedb:
-    has_multiple:
-        role: app
-        count: 9
+    count: 4
+    scope: zone
 
-app:
-    config:
-        template: 'database.yml.erb'
-        copy_to_location: '.'
-        copy_cap_command: 'control:move_database_yml'
-        params:
-            server: app
-            masterdb: masterdb
-            slavedb: slavedb
 
