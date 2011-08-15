@@ -6,6 +6,10 @@ require 'hashie'
 require 'lib/command_parser'
 require 'lib/aws_connection'
 
+def symbolize(*names)
+  names.map {|n| n.to_sym}
+end
+
 BASE_PATH = File.dirname(__FILE__)
 PROFILES_PATH = BASE_PATH + '/config/profiles'
 ROLES_PATH = BASE_PATH + '/config/roles'
