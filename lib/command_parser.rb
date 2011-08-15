@@ -1,4 +1,9 @@
 require 'yaml'
+require 'lib/profile'
+
+class Hashie::Mash
+  undef :count # usually count is the number of keys mash has
+end
 
 def mash x
   Hashie::Mash.new x
@@ -34,6 +39,7 @@ class CommandParser
       load_selected_command
       @command = @command_klass.new(@profile, @roles)
       process_command_options
+      verify_profile
     else
       # print usage information and an error message
       process_generic_help_options
@@ -45,19 +51,22 @@ class CommandParser
   end
 
   def load_profile_config
-    @profile = mash(YAML.load_file(@selected_profile_path))
-    @profile.name = @selected_profile
+    @profile_config = mash(YAML.load_file(@selected_profile_path))
+    @profile_config.name = @selected_profile
+
     load_roles_config
+    @profile = Profile.new(@profile_config, @roles)
   end
 
   def load_roles_config
-    roles_config_path = @roles_path + "/#{@profile.roles}.yml"
+    roles_config_path = @roles_path + "/#{@profile_config.roles}.yml"
     unless File.exists? roles_config_path
       error "profile #{@profile.name} config file is broken - can't find roles file #{roles_config_path}"
       exit
     end
 
     @roles = mash(YAML.load_file(roles_config_path))
+    @roles.keys.each {|name| @roles[name].name = name}
   end
 
   def detect_selected_profile
@@ -73,6 +82,12 @@ class CommandParser
   def load_selected_command
     require @selected_command_path
     @command_klass = Object.const_get(humanize(@selected_command.capitalize))
+  end
+
+  def verify_profile
+    unless @profile.missing_roles.empty?
+      Trollop::die "Undefined roles [%s] in profile '%s'" % [@profile.missing_roles.join(', '), @profile.name]
+    end
   end
 
   private
