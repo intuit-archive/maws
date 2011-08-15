@@ -1,19 +1,19 @@
 roles: 'lc'
 lanes: 2
 
-loadbalancer:
-    count: 2
-    scope: region
-    configs:
-        -
-            template: loadbalancer.config
-            web_servers:
-                select_many:
-                    role: web
-                    scope: region
-queue:
-    count: 2
-    scope: zone
+# loadbalancer:
+#     count: 2
+#     scope: region
+#     configs:
+#         -
+#             template: loadbalancer.config
+#             web_servers:
+#                 select_many:
+#                     role: web
+#                     scope: region
+# queue:
+#     count: 2
+#     scope: zone
 
 
 web:
