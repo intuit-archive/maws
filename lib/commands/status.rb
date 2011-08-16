@@ -1,6 +1,6 @@
 require 'lib/command'
 require 'awesome_print'
-class Test < Command
+class Status < Command
   def run!
     # p @options
     # p @connection

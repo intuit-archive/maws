@@ -15,15 +15,11 @@ class Profile
     defined_roles.each do |role_name|
       role = @roles[role_name]
       role_profile = @config[role_name]
-      puts role_name
-      p role_profile
-      puts role_profile.count
       role_profile.count.times do |i|
         name = "%s-%s-%d" % [self.name,role_name,i+1]
-        Instance.all << Instance.new(name,role,'unknown')
+        Instance.all << Instance.new_for_service(role.service,name,role,'unknown')
       end
     end
-
   end
 
   def name
@@ -40,8 +36,8 @@ class Profile
   end
 
   def dump_state
-    puts "NAME                STATUS"
-    # puts Instance.all
-    puts Instance.for_role('slavedb')
+    puts "SYNC NAME                STATUS"
+    puts Instance.all
+    # puts Instance.for_role('slavedb')
   end
 end

@@ -30,7 +30,7 @@ web:
                   # scope: zone
                   # count: all
                   # distribute: all | split
-                  count: 12
+                  # count: 12
 
         -
           template: 'vhosts'
@@ -42,7 +42,7 @@ web:
           force_nonstatic_ssl: true
           deploy_version: '1'
 app:
-    count: 36
+    count: 9
     scope: lane
     configs:
         -

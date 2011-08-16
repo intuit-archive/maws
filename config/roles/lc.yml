@@ -25,7 +25,8 @@ masterdb:
         - default
 
 slavedb:
-    service: rds_read_replica
+    service: rds
+    replica: true
     source_role: masterdb
     instance_class: 'db.m1.small'
 
