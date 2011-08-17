@@ -2,20 +2,27 @@ require 'lib/command'
 
 class Status < Command
   def run!
-    # p @options
-    # p @connection
-    # p @connection.ec2
-    # p @connection.rds
+    puts "NAME                STATUS"
+    @selected_instances.each {|i| puts instance_to_s(i)}
+  end
 
-    # @ec2 = @connection.ec2
-    # @rds = @connection.rds
+  def instance_to_s(instance)
+    name = instance.name
+    status = instance.status
 
-    # ap @ec2.describe_instances
-    # ap @rds.describe_db_instances
+    col_width = 20
+    name_padding = " " * (col_width-name.length)
 
-    # puts @ec2.describe_regions
-    puts "SYNC NAME                STATUS"
-    puts @selected_instances
+    name.to_s + name_padding + display_status(status)
+  end
+
+  def display_status(status)
+    case status
+    when 'unknown' : '?'
+    when 'non-existant' : 'n/a'
+    when 'terminated' : 'n/a (terminated)'
+    else status
+    end
   end
 
 end

@@ -12,9 +12,18 @@ class Instance
     klass.new(*args)
   end
 
-  def initialize(n,r,s)
-    @name, @role, @status = n,r,s
+  def initialize(name, role, status)
+    @name, @role, @status = name, role, status
     @aws_id = nil
+  end
+
+  def sync
+    description = @connection.description_for_name(name)
+    if description
+      self.aws_description = description
+    else
+      @status = 'non-existant'
+    end
   end
 
   def synced?
@@ -32,31 +41,6 @@ class Instance
   def aws_description=(description)
     # description is a hash, see bottom of the file for each instance class for examples
     rise "not implemented"
-  end
-
-  def to_s
-    col_width = 20
-    name_padding = " " * (20-@name.length)
-    # role_padding = " " * (20-@role.name.length)
-    # status_padding = " " * (20-name.length)
-
-    sync_column = synced? ? "S    " : "     "
-    sync_column + @name.to_s + name_padding + display_status
-  end
-
-  def display_status
-    case @status
-    when 'unknown' : '?'
-    else @status
-    end
-  end
-
-  def self.for_role(role_name)
-    all.select {|i| i.role.name == role_name}
-  end
-
-  def self.all
-    @all ||= []
   end
 end
 

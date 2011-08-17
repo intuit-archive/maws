@@ -2,7 +2,7 @@ require 'lib/instance'
 
 class Profile
   RESERVED_ROLE_NAMES = %w(roles lanes name)
-  attr_reader :config, :roles
+  attr_reader :config, :roles, :all_instances
 
   def initialize(config, roles)
     @config = config
@@ -12,12 +12,13 @@ class Profile
   end
 
   def build_instance_objects
+    @all_instances = []
     defined_roles.each do |role_name|
       role = @roles[role_name]
       role_profile = @config[role_name]
       role_profile.count.times do |i|
         name = "%s-%s-%d" % [self.name,role_name,i+1]
-        Instance.all << Instance.new_for_service(role.service,name,role,'unknown')
+        @all_instances << Instance.new_for_service(role.service,name,role,'unknown')
       end
     end
   end

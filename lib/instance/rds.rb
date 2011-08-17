@@ -8,6 +8,20 @@ class Instance::RDS < Instance
   end
 end
 
+def create
+  return if exists_on_aws?
+  info "creating #{name}..."
+  results = connection.ec2.launch_instances(role.image_id,
+    :min_count => 1,
+    :max_count => 1,
+    :group_ids => role.security_groups,
+    :user_data => role.user_date,
+    :instance_type => role.instance_type)
+  self.aws_description = results.first
+  connection.ec2.create_tags(@aws_id, {'Name' => name})
+  info "...done (#{name} is '#{aws_id}')"
+end
+
 # example rds description
 # {:instance_class=>"db.m1.small",
 #      :status=>"creating",

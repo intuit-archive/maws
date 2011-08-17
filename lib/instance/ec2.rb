@@ -7,7 +7,7 @@ class Instance::EC2 < Instance
     @status = description[:aws_state]
   end
 
-  def create(connection, name)
+  def create
     return if exists_on_aws?
     info "creating #{name}..."
     results = connection.ec2.launch_instances(role.image_id,

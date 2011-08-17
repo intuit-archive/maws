@@ -31,15 +31,19 @@ class Command
 
   protected
   def sync_profile_instances
-    Instance.all.each do |i|
-      description = @connection.description_for_name(i.name)
-      i.aws_description = description if description
+    @profile.all_instances.each do |i|
+      i.connection = @connection
+      i.sync
     end
   end
 
   def select_instances_by_command_options
-    @selected_instances = Instance.all.select do |i|
-      options.roles.include? i.role.name if options.roles
+    @selected_instances = if options.all
+      @profile.all_instances
+    else
+      @profile.all_instances.select do |i|
+        options.roles.include? i.role.name if options.roles
+      end
     end
   end
 end
