@@ -26,3 +26,6 @@ cp = CommandParser.new(PROFILES_PATH, ROLES_PATH,COMMANDS_PATH)
 command = cp.parse_and_load_command
 command.connection = AwsConnection.new(KEY_ID, SECRET_KEY)
 command.run!
+
+
+# generate security group names based on profile/role

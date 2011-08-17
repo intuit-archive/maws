@@ -12,6 +12,7 @@ class Command
   def connection=(connection)
     @connection = connection
     sync_profile_instances
+    select_instances_by_command_options
   end
 
   def run!
@@ -33,6 +34,12 @@ class Command
     Instance.all.each do |i|
       description = @connection.description_for_name(i.name)
       i.aws_description = description if description
+    end
+  end
+
+  def select_instances_by_command_options
+    @selected_instances = Instance.all.select do |i|
+      options.roles.include? i.role.name if options.roles
     end
   end
 end

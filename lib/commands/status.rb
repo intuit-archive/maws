@@ -1,5 +1,5 @@
 require 'lib/command'
-require 'awesome_print'
+
 class Status < Command
   def run!
     # p @options
@@ -14,7 +14,8 @@ class Status < Command
     # ap @rds.describe_db_instances
 
     # puts @ec2.describe_regions
-    @profile.dump_state
+    puts "SYNC NAME                STATUS"
+    puts @selected_instances
   end
 
 end

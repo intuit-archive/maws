@@ -35,9 +35,4 @@ class Profile
     @config.keys - RESERVED_ROLE_NAMES
   end
 
-  def dump_state
-    puts "SYNC NAME                STATUS"
-    puts Instance.all
-    # puts Instance.for_role('slavedb')
-  end
 end

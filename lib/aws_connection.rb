@@ -28,7 +28,7 @@ class AwsConnection
       name = description[:tags]["Name"] || description[:aws_instance_id]
       @ec2_name_grouped_descriptions[name] = description
     end
-    info "...done"
+    info "...done (received #{descriptions.count} descriptions from AWS)"
     @ec2_name_grouped_descriptions
   end
 

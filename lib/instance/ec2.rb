@@ -6,6 +6,21 @@ class Instance::EC2 < Instance
     @aws_id = description[:aws_instance_id]
     @status = description[:aws_state]
   end
+
+  def create(connection, name)
+    return if exists_on_aws?
+    info "creating #{name}..."
+    results = connection.ec2.launch_instances(role.image_id,
+      :min_count => 1,
+      :max_count => 1,
+      :group_ids => role.security_groups,
+      :user_data => role.user_date,
+      :instance_type => role.instance_type)
+    self.aws_description = results.first
+    connection.ec2.create_tags(@aws_id, {'Name' => name})
+    info "...done (#{name} is '#{aws_id}')"
+  end
+
 end
 
 # example ec2 description

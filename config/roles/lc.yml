@@ -2,7 +2,7 @@ web:
     service: ec2
     image_id: 'ami-c7c99982'
     instance_type: 't1.micro'
-    security_group:
+    security_groups:
         - default
     user_data: 'abc123'
 
@@ -10,7 +10,7 @@ app:
     service: ec2
     image_id: 'ami-c7c99982'
     instance_type: 't1.micro'
-    security_group:
+    security_groups:
         - default
     user_data: 'APPDATA'
 
@@ -21,7 +21,7 @@ masterdb:
     master_username: 'user'
     master_password: 'pass'
     db_name:
-    db_security_groups:
+    security_groups:
         - default
 
 slavedb:

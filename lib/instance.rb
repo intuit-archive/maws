@@ -1,5 +1,5 @@
 class Instance
-  attr_accessor :name, :role
+  attr_accessor :name, :role, :connection
   attr_reader :aws_id, :aws_description, :status
 
   def self.new_for_service(service, *args)
@@ -19,6 +19,14 @@ class Instance
 
   def synced?
     !@aws_id.nil?
+  end
+
+  def terminated?
+    status == 'terminated'
+  end
+
+  def exists_on_aws?
+    synced? && !terminated?
   end
 
   def aws_description=(description)
