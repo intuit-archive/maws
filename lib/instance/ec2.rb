@@ -1,5 +1,7 @@
 require 'lib/instance'
 
+# for EC2 instances @aws_id is a random id
+# name is a value of 'Name' tag
 class Instance::EC2 < Instance
   def aws_description=(description)
     @aws_description = description
@@ -19,6 +21,28 @@ class Instance::EC2 < Instance
     self.aws_description = results.first
     connection.ec2.create_tags(@aws_id, {'Name' => name})
     info "...done (#{name} is '#{aws_id}')"
+  end
+
+  def destroy
+    return unless exists_on_aws?
+    connection.ec2.terminate_instances(@aws_id)
+    info "destroying EC2 #{name} (#{@aws_id})"
+  end
+
+  def stop
+    return unless exists_on_aws?
+    if @status == 'running'
+      connection.ec2.stop_instances(@aws_id)
+      info "stopping EC2 #{name} (#{@aws_id})"
+    end
+  end
+
+  def start
+    return unless exists_on_aws?
+    if @status == 'stopped'
+      connection.ec2.start_instances(@aws_id)
+      info "starting EC2 #{name} (#{@aws_id})"
+    end
   end
 
 end

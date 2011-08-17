@@ -41,7 +41,7 @@ class AwsConnection
     descriptions.each do |description|
       @rds_name_grouped_descriptions[description[:aws_id]] = description
     end
-    info "...done (received #{descriptions.count} RDS descriptions from AWS)"
+    info "...done (received #{descriptions.count} RDS descriptions from AWS)\n\n\n"
 
     @rds_name_grouped_descriptions
   end

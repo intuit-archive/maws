@@ -1,5 +1,6 @@
 require 'lib/instance'
 
+# for RDS instances name == @aws_id
 class Instance::RDS < Instance
   def aws_description=(description)
     @aws_description = description
@@ -17,6 +18,24 @@ class Instance::RDS < Instance
       :db_name => role.db_name || profile_for_role_config.db_name)
     self.aws_description = result
     info "...done (RDS #{name} is ready)"
+  end
+
+  def destroy
+    return unless exists_on_aws?
+    stoppable_states = %w(available failed storage-full incompatible-parameters incompatible-restore)
+    unless stoppable_states.include? @status
+      info "can't destroy RDS #{@aws_id} while it is #{@status}"
+      return
+    end
+    connection.rds.delete_db_instance(@aws_id)
+    info "destroying RDS #{@aws_id}"
+  end
+
+  def start
+    # do nothing
+  end
+
+  def stop
   end
 
 end
