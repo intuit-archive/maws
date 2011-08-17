@@ -42,6 +42,7 @@ class CommandParser
       verify_profile
     else
       # print usage information and an error message
+      ARGV.delete_if {|arg| arg != "-h" && arg != "--help"}
       process_generic_help_options
       Trollop::die "no such profile #{@selected_profile_path}" unless File.exists?(@selected_profile_path)
       Trollop::die "no such command #{@selected_command}" unless File.exists? @selected_command_path
