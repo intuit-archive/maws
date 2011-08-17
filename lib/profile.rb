@@ -18,7 +18,7 @@ class Profile
       role_profile = @config[role_name]
       role_profile.count.times do |i|
         name = "%s-%s-%d" % [self.name,role_name,i+1]
-        @all_instances << Instance.new_for_service(role.service,name,role,'unknown')
+        @all_instances << Instance.new_for_service(role.service,name,role,@config[role_name],'unknown')
       end
     end
   end

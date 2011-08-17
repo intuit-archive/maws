@@ -33,7 +33,17 @@ class AwsConnection
   end
 
   def rds_name_grouped_descriptions
-    @rds_name_grouped_descriptions ||= {}
+    return @rds_name_grouped_descriptions if @rds_name_grouped_descriptions
+
+    info "Fetching all RDS instances info from AWS..."
+    descriptions = rds.describe_db_instances
+    @rds_name_grouped_descriptions = {}
+    descriptions.each do |description|
+      @rds_name_grouped_descriptions[description[:aws_id]] = description
+    end
+    info "...done (received #{descriptions.count} RDS descriptions from AWS)"
+
+    @rds_name_grouped_descriptions
   end
 
   def description_for_name name

@@ -1,5 +1,5 @@
 class Instance
-  attr_accessor :name, :role, :connection
+  attr_accessor :name, :role, :profile_for_role_config, :connection
   attr_reader :aws_id, :aws_description, :status
 
   def self.new_for_service(service, *args)
@@ -12,8 +12,8 @@ class Instance
     klass.new(*args)
   end
 
-  def initialize(name, role, status)
-    @name, @role, @status = name, role, status
+  def initialize(name, role, profile_for_role, status)
+    @name, @role, @profile_for_role_config, @status = name, role, profile_for_role, status
     @aws_id = nil
   end
 

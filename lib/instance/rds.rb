@@ -6,20 +6,19 @@ class Instance::RDS < Instance
     @aws_id = description[:aws_id]
     @status = description[:status]
   end
-end
 
-def create
-  return if exists_on_aws?
-  info "creating #{name}..."
-  results = connection.ec2.launch_instances(role.image_id,
-    :min_count => 1,
-    :max_count => 1,
-    :group_ids => role.security_groups,
-    :user_data => role.user_date,
-    :instance_type => role.instance_type)
-  self.aws_description = results.first
-  connection.ec2.create_tags(@aws_id, {'Name' => name})
-  info "...done (#{name} is '#{aws_id}')"
+  def create
+    return if exists_on_aws?
+    info "creating #{name}..."
+    result = connection.rds.create_db_instance(name, role.master_username, role.master_password,
+      :instance_class => role.instance_class,
+      :allocated_storage => role.allocated_storage,
+      :db_security_groups => role.security_groups,
+      :db_name => role.db_name || profile_for_role_config.db_name)
+    self.aws_description = result
+    info "...done (RDS #{name} is ready)"
+  end
+
 end
 
 # example rds description
