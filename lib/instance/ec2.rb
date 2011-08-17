@@ -13,6 +13,7 @@ class Instance::EC2 < Instance
     return if exists_on_aws?
     info "creating #{name}..."
     results = connection.ec2.launch_instances(role.image_id,
+      :availability_zone => @availability_zone,
       :min_count => 1,
       :max_count => 1,
       :group_ids => role.security_groups,

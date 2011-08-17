@@ -24,7 +24,7 @@ KEY_ID,SECRET_KEY = *File.read(AWS_KEY_FILE).lines.map {|l| l.chomp}
 
 cp = CommandParser.new(PROFILES_PATH, ROLES_PATH,COMMANDS_PATH)
 command = cp.parse_and_load_command
-command.connection = AwsConnection.new(KEY_ID, SECRET_KEY)
+command.connection = AwsConnection.new(KEY_ID, SECRET_KEY, command.options)
 command.run!
 
 

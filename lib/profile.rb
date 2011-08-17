@@ -3,12 +3,11 @@ require 'lib/instance'
 class Profile
   RESERVED_ROLE_NAMES = %w(roles lanes name)
   attr_reader :config, :roles, :all_instances
+  attr_accessor :options
 
   def initialize(config, roles)
     @config = config
     @roles = roles
-
-    build_instance_objects
   end
 
   def build_instance_objects
@@ -18,7 +17,9 @@ class Profile
       role_profile = @config[role_name]
       role_profile.count.times do |i|
         name = "%s-%s-%d" % [self.name,role_name,i+1]
-        @all_instances << Instance.new_for_service(role.service,name,role,@config[role_name],'unknown')
+        @all_instances << Instance.new_for_service(role.service, name, role,
+                                              @options.availability_zone, @config[role_name],
+                                              'unknown')
       end
     end
   end

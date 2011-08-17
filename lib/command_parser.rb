@@ -39,6 +39,7 @@ class CommandParser
       load_selected_command
       @command = @command_klass.new(@profile, @roles)
       process_command_options
+      @profile.build_instance_objects
       verify_profile
     else
       # print usage information and an error message
@@ -127,8 +128,10 @@ class CommandParser
       command.add_generic_options(self)
       command.add_specific_options(self)
     end
+    command_opts[:availability_zone] = command_opts[:region] + command_opts[:zone]
 
     @command.options = mash command_opts
+    @profile.options = @command.options
   end
 
   def usage(profile='profile', command='command')

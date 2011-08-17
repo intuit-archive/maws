@@ -3,11 +3,13 @@ require '/Users/jgaigalas/src/right_aws/lib/right_aws'
 require 'lib/logger'
 
 class AwsConnection
-  def initialize(keyid, key)
+  def initialize(keyid, key, options)
     @access_key_id = keyid
     @secret_key = key
+    @options = options
 
-    @params = {:region => 'us-west-1', :logger => $logger}
+    @params = {:region => @options.region, :logger => $logger}
+    info "ZONE: #{@options.availability_zone}\n\n"
   end
 
   def ec2
@@ -23,6 +25,7 @@ class AwsConnection
 
     info "Fetching all EC2 instances info from AWS..."
     descriptions = ec2.describe_instances
+    descriptions.delete_if {|description| description[:aws_availability_zone] != @options.availability_zone}
     @ec2_name_grouped_descriptions = {}
     descriptions.each do |description|
       name = description[:tags]["Name"] || description[:aws_instance_id]
@@ -37,6 +40,7 @@ class AwsConnection
 
     info "Fetching all RDS instances info from AWS..."
     descriptions = rds.describe_db_instances
+    descriptions.delete_if {|description| description[:availability_zone] != @options.availability_zone}
     @rds_name_grouped_descriptions = {}
     descriptions.each do |description|
       @rds_name_grouped_descriptions[description[:aws_id]] = description

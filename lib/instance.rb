@@ -12,8 +12,8 @@ class Instance
     klass.new(*args)
   end
 
-  def initialize(name, role, profile_for_role, status)
-    @name, @role, @profile_for_role_config, @status = name, role, profile_for_role, status
+  def initialize(name, role, availability_zone, profile_for_role, status)
+    @name, @role, @profile_for_role_config, @availability_zone, @status = name, role, profile_for_role, availability_zone, status
     @aws_id = nil
   end
 
