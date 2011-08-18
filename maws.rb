@@ -29,3 +29,11 @@ command.run!
 
 
 # generate security group names based on profile/role
+
+# problem?
+# db names/awsids can't be shared by rdses in different zones
+
+# add zone to name
+# get images
+# generate configs and upload images
+

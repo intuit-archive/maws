@@ -10,13 +10,30 @@ class Instance::RDS < Instance
 
   def create
     return if exists_on_aws?
-    info "creating #{name}..."
-    result = connection.rds.create_db_instance(name, role.master_username, role.master_password,
-      :availability_zone => @availability_zone,
-      :instance_class => role.instance_class,
-      :allocated_storage => role.allocated_storage,
-      :db_security_groups => role.security_groups,
-      :db_name => role.db_name || profile_for_role_config.db_name)
+    az_options = if profile.profile_for_role(role.name).config.scope == 'region' && !role.replica
+      {:multi_az => true}
+    else
+      {:availability_zone => options.availability_zone}
+    end
+
+    if role.replica
+      info "creating RDS Read Replica #{name}..."
+      source_instance = profile.profile_for_role(role.name).select_one_of_role(role.source_role)
+      unless source_instance.valid_read_replica_source?
+        error "...can't create read replica - source rds #{source_instance.name} is not valid (#{source_instance.status})!"
+        return
+      end
+
+      result = connection.rds.create_db_instance_read_replica(name, source_instance.name, :instance_class => role.instance_class)
+    else
+      info "creating RDS #{name}..."
+      result = connection.rds.create_db_instance(name, role.master_username, role.master_password,
+        :instance_class => role.instance_class,
+        :allocated_storage => role.allocated_storage,
+        :db_security_groups => role.security_groups,
+        :db_name => role.db_name || profile_for_role_config.db_name).merge(az_options)
+    end
+
     self.aws_description = result
     info "...done (RDS #{name} is ready)"
   end
@@ -37,6 +54,10 @@ class Instance::RDS < Instance
   end
 
   def stop
+  end
+
+  def valid_read_replica_source?
+    exists_on_aws? && !role.replica
   end
 
 end
