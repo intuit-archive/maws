@@ -1,5 +1,5 @@
-roles: 'lc'
-lanes: 2
+roles: 'bps-test'
+lanes: 1
 
 # loadbalancer:
 #     count: 2
@@ -19,6 +19,7 @@ lanes: 2
 web:
     count: 2
     scope: lane
+    keypair: jgaigalas_key
     configs:
         -
           template: '/etc/httpd/conf/proxy.conf'
@@ -44,6 +45,7 @@ web:
 app:
     count: 4
     scope: lane
+    keypair: jgaigalas_key
     configs:
         -
             template: 'database.yml'
@@ -61,7 +63,7 @@ app:
 masterdb:
     count: 1
     scope: region
-    db_name: 'cia_prod'
+    db_name: 'bps'
 
 
 slavedb:

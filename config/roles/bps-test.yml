@@ -1,0 +1,32 @@
+web:
+    service: ec2
+    image_id: 'ami-572eef3e'
+    instance_type: 't1.micro'
+    security_groups:
+        - bps-web
+    user_data: 'abc123'
+
+app:
+    service: ec2
+    image_id: 'ami-c763a2ae'
+    instance_type: 't1.micro'
+    security_groups:
+        - bps-app
+    user_data: 'APPDATA'
+
+masterdb:
+    service: rds
+    instance_class: 'db.m1.small'
+    allocated_storage: 6
+    master_username: 'userX'
+    master_password: 'passX'
+    db_name:
+    security_groups:
+        - bps-db
+
+slavedb:
+    service: rds
+    replica: true
+    source_role: masterdb
+    instance_class: 'db.m1.small'
+
