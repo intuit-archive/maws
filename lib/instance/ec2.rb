@@ -14,12 +14,14 @@ class Instance::EC2 < Instance
     info "creating #{name}..."
     results = connection.ec2.launch_instances(role.image_id,
       :availability_zone => options.availability_zone,
+      :key_name => profile.profile_for_role(role.name).config.keypair,
       :min_count => 1,
       :max_count => 1,
       :group_ids => role.security_groups,
       :user_data => role.user_date,
       :instance_type => role.instance_type)
     self.aws_description = results.first
+    sleep 1 # wait for web to be created
     connection.ec2.create_tags(@aws_id, {'Name' => name})
     info "...done (#{name} is '#{aws_id}')"
   end
