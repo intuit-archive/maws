@@ -1,7 +1,7 @@
 web:
     service: ec2
     image_id: 'ami-572eef3e'
-    instance_type: 't1.micro'
+    instance_type: 'c1.xlarge'
     security_groups:
         - bps-web
     user_data: 'abc123'
@@ -18,8 +18,8 @@ masterdb:
     service: rds
     instance_class: 'db.m1.small'
     allocated_storage: 6
-    master_username: 'userX'
-    master_password: 'passX'
+    master_username: 'root'
+    master_password: 'intuit01'
     db_name:
     security_groups:
         - bps-db

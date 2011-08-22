@@ -24,7 +24,7 @@ class Command
     parser.opt :roles, "List of roles (available: #{available_roles})", :type => :strings
     parser.opt :names, "Names of machines", :type => :strings
     parser.opt :all, "All roles", :short => '-A', :type => :flag
-    parser.opt :region, "Region", :short => '-R', :default => 'us-west-1'
+    parser.opt :region, "Region", :short => '-R', :default => 'us-east-1'
     parser.opt :zone, "Zone", :short => '-Z', :default => 'b'
   end
 

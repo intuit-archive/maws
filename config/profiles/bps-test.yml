@@ -50,14 +50,14 @@ app:
         -
             template: 'database.yml'
             copy_to_location: '.'
-            copy_cap_command: 'control:move_database_yml'
+            restart_command: 'cd /bps/site;kill `cat tmp/pids/unicorn.pid`;bundle exec unicorn_rails -c config/unicorn.rb -E production -D'
             server: self
             masterdb:
                 select_one: masterdb
             slavedb:
                 select_one:
                     role: slavedb
-                    group: true # default false
+                    group: false # default false
                     # scope: zone
 
 masterdb:
@@ -67,7 +67,7 @@ masterdb:
 
 
 slavedb:
-    count: 4
+    count: 1
     scope: zone
 
 

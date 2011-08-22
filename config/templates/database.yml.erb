@@ -1,16 +1,12 @@
-# database file for app server <%= server %> (<%= Time.now %>)
+# database file for app server <%= server.name %> (<%= Time.now %>)
 production:
   adapter: mysql
-  database: cia_prod
+  database: <%= masterdb.db_name %>
   username: <%= masterdb.master_username %>
   password: <%= masterdb.master_password %>
-  host: <%= masterdb.endpoint_address %>"
+  host: <%= masterdb.endpoint_address %>
   port: 3306
+  encoding: utf8
+  reconnect: false
+  pool: 5
 
-production_slave_database_1
-  adapter: mysql
-  database: cia_prod
-  host: <%= slavedb.endpoint_address %>
-  username: <%= slavedb.master_username %>
-  password: <%= slavedb.master_password %>
-  port: 3306
