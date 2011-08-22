@@ -46,6 +46,22 @@ class Instance
     # description is a hash, see bottom of the file for each instance class for examples
     rise "not implemented"
   end
+
+  def to_s
+    "#{name}   #{status}    #{@aws_id}"
+  end
+
+  def inspect
+    "<Instance #{to_s}>"
+  end
+
+  def profile_for_role
+    @profile
+  end
+
+  def method_missing(method_name, *args, &block)
+    @role[method_name] || @profile.profile_for_role(role.name).config[method_name] || aws_description[method_name] || options[method_name]
+  end
 end
 
 require 'lib/instance/ec2'
