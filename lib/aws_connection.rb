@@ -24,7 +24,6 @@ class AwsConnection
     return @ec2_descriptions if @ec2_descriptions
     info "Fetching all EC2 instances info from AWS..."
     @ec2_descriptions = ec2.describe_instances
-    @ec2_descriptions.delete_if {|description| description[:aws_availability_zone] != @options.availability_zone}
     info "...done (received #{@ec2_descriptions.count} EC2 descriptions from AWS)"
 
     @ec2_descriptions
@@ -35,9 +34,6 @@ class AwsConnection
 
     info "Fetching all RDS instances info from AWS..."
     @rds_descriptions = rds.describe_db_instances
-    @rds_descriptions.delete_if do |description|
-      (description[:availability_zone] != @options.availability_zone) && !description[:multi_az]
-    end
     info "...done (received #{@rds_descriptions.count} RDS descriptions from AWS)\n\n\n"
 
     @rds_descriptions
