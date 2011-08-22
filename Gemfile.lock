@@ -3,6 +3,11 @@ GEM
   specs:
     erubis (2.7.0)
     hashie (1.1.0)
+    net-scp (1.0.4)
+      net-ssh (>= 1.99.1)
+    net-ssh (2.1.4)
+    net-ssh-shell (0.2.0)
+      net-ssh (~> 2.1.0)
     right_aws (2.1.0)
       right_http_connection (>= 1.2.5)
     right_http_connection (1.3.0)
@@ -13,4 +18,7 @@ PLATFORMS
 DEPENDENCIES
   erubis
   hashie
+  net-scp
+  net-ssh
+  net-ssh-shell
   right_aws
