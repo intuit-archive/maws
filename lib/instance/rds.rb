@@ -27,11 +27,13 @@ class Instance::RDS < Instance
       result = connection.rds.create_db_instance_read_replica(name, source_instance.name, :instance_class => role.instance_class)
     else
       info "creating RDS #{name}..."
-      result = connection.rds.create_db_instance(name, role.master_username, role.master_password,
-        :instance_class => role.instance_class,
-        :allocated_storage => role.allocated_storage,
-        :db_security_groups => role.security_groups,
-        :db_name => role.db_name || profile_for_role_config.db_name).merge(az_options)
+      create_opts = {:instance_class => role.instance_class,
+      :allocated_storage => role.allocated_storage,
+      :db_security_groups => role.security_groups,
+      :db_name => role.db_name || profile.profile_for_role(role.name).config.db_name}.merge(az_options)
+
+      result = connection.rds.create_db_instance(name, role.master_username, role.master_password, create_opts)
+
     end
 
     self.aws_description = result
