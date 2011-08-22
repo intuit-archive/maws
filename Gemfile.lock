@@ -1,6 +1,7 @@
 GEM
   remote: http://rubygems.org/
   specs:
+    erubis (2.7.0)
     hashie (1.1.0)
     right_aws (2.1.0)
       right_http_connection (>= 1.2.5)
@@ -10,5 +11,6 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  erubis
   hashie
   right_aws
