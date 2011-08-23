@@ -31,6 +31,9 @@ class Command
   def add_specific_options(parser)
   end
 
+  def verify_options
+  end
+
   protected
   def sync_profile_instances
     @profile.all_instances.each do |i|

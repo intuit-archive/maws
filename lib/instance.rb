@@ -59,6 +59,14 @@ class Instance
     @profile
   end
 
+  def has_approximate_status?(status)
+    if status == "n/a" or status == "terminated"
+      terminated? || !exists_on_aws?
+    else
+      status == @status
+    end
+  end
+
   def method_missing(method_name, *args, &block)
     @role[method_name] || @profile.profile_for_role(role.name).config[method_name] || aws_description[method_name] || options[method_name]
   end

@@ -39,27 +39,28 @@ class AwsConnection
     @rds_descriptions
   end
 
+  def clear_cached_descriptions
+    @rds_descriptions = nil
+    @ec2_descriptions = nil
+  end
 
   def ec2_name_grouped_descriptions
-    return @ec2_name_grouped_descriptions if @ec2_name_grouped_descriptions
-    @ec2_name_grouped_descriptions = {}
+    ec2_name_grouped_descriptions = {}
     ec2_descriptions.each do |d|
       name = d[:tags]["Name"] || d[:aws_instance_id]
-      @ec2_name_grouped_descriptions[name] = d
+      ec2_name_grouped_descriptions[name] = d
     end
 
-    @ec2_name_grouped_descriptions
+    ec2_name_grouped_descriptions
   end
 
   def rds_name_grouped_descriptions
-    return @rds_name_grouped_descriptions if @rds_name_grouped_descriptions
-
-    @rds_name_grouped_descriptions = {}
+    rds_name_grouped_descriptions = {}
     rds_descriptions.each do |description|
-      @rds_name_grouped_descriptions[description[:aws_id]] = description
+      rds_name_grouped_descriptions[description[:aws_id]] = description
     end
 
-    @rds_name_grouped_descriptions
+    rds_name_grouped_descriptions
   end
 
   def description_for_name name
