@@ -23,7 +23,8 @@ web:
     configs:
         -
           template: '/etc/httpd/conf/proxy.conf'
-          copy_to_location: '/etc/httpd/conf/proxy.conf'
+          remote:
+              location: '/etc/httpd/conf/proxy.conf'
           balancer: self
           balancer_members:
               select_many:
@@ -49,8 +50,10 @@ app:
     configs:
         -
             template: 'database.yml'
-            copy_to_location: '.'
-            restart_command: 'cd /bps/site;kill `cat tmp/pids/unicorn.pid`;bundle exec unicorn_rails -c config/unicorn.rb -E production -D'
+            remote:
+                location: '/bps/site/config/database.yml'
+                stop: 'su - bps -c "cd /bps/site; if [ -e tmp/pids/unicorn.pid ]; then <tmp/pids/unicorn.pid xargs kill; fi"'
+                start: 'su - bps -c "cd /bps/site; bundle exec unicorn_rails -c config/unicorn.rb -E production -D"'
             server: self
             masterdb:
                 select_one: masterdb

@@ -21,7 +21,7 @@ class Instance::EC2 < Instance
       :user_data => role.user_date,
       :instance_type => role.instance_type)
     self.aws_description = results.first
-    sleep 1 # wait for web to be created
+    sleep 1 # wait for instance to be created
     connection.ec2.create_tags(@aws_id, {'Name' => name})
     info "...done (#{name} is '#{aws_id}')"
   end

@@ -44,7 +44,11 @@ class Command
       @profile.all_instances
     else
       @profile.all_instances.select do |i|
-        options.roles.include? i.role.name if options.roles
+        if options.roles
+          options.roles.include? i.role.name
+        elsif options.names
+          options.names.include? i.name
+        end
       end
     end
   end

@@ -1,8 +1,13 @@
 require 'lib/command'
 require 'erubis'
+require 'net/ssh'
+require 'net/scp'
+require 'open3'
 
 class Configure < Command
   TEMPLATE_DIR = "config/templates/"
+  TEMPLATE_OUTPUT_DIR = "tmp/"
+  KEYPAIR_DIR = "config/keypairs/"
   def run!
     @selected_instances.each do |instance|
       role = instance.role
@@ -10,21 +15,54 @@ class Configure < Command
       instance_config.configs.each do |config_file|
         config_file = config_file.dup
         template_file = config_file.delete(:template)
-        copy_to_location = config_file.delete(:copy_to_location)
-        restart_command = config_file.delete(:restart_command)
+        remote_config = config_file.delete(:remote)
         config_file.delete(:copy_cap_command)
 
+        # prepare params for config file interpolation
         params = {}
         config_file.each do |param, value|
           params[param] = prepare_template_value(instance, param, value)
         end
 
+        # generate config file
         template_path = TEMPLATE_DIR + template_file + ".erb"
         template = File.read(template_path)
         generated_config =  Erubis::Eruby.new(template).result(params)
-        puts generated_config
+
+        config_output_path = TEMPLATE_OUTPUT_DIR + "#{instance.name}--#{instance.aws_id}." + template_file
+        info "generated  '#{config_output_path}'"
+        File.open(config_output_path, "w") {|f| f.write(generated_config)}
+
+        upload_and_restart(config_output_path, instance, instance_config, remote_config)
       end
     end
+  end
+
+  def upload_and_restart(config_output_path, instance, instance_config, remote_config)
+    keypair_file = KEYPAIR_DIR + instance_config.keypair + ".pem"
+    host = instance.dns_name
+    user = "root"
+
+    info "connecting to '#{user}@#{host}'..."
+
+    Net::SSH.start(host, user,
+              :keys => [keypair_file],
+              :verbose => :warn,
+              :auth_methods => 'publickey') do |ssh|
+
+      ssh.scp.upload!(config_output_path, remote_config.location)
+
+      timestamp = ssh.exec!("stat -c %y #{remote_config.location}")
+      info "            new timestamp: " + timestamp
+
+      info "   executing stop command: " + remote_config.stop
+      ssh.exec!(remote_config.stop)
+
+      info "   executing start command: " + remote_config.start
+      ssh.exec!(remote_config.start)
+    end
+
+    puts "...done (disconnected from '#{user}@#{host}')\n\n"
   end
 
   def prepare_template_value(instance, name, value)

@@ -1,7 +1,7 @@
 web:
     service: ec2
     image_id: 'ami-c7c99982'
-    instance_type: 't1.micro'
+    instance_type: 'm1.large'
     security_groups:
         - default
     user_data: 'abc123'
@@ -9,7 +9,7 @@ web:
 app:
     service: ec2
     image_id: 'ami-c7c99982'
-    instance_type: 't1.micro'
+    instance_type: 'c1.xlarge'
     security_groups:
         - default
     user_data: 'APPDATA'
