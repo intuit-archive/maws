@@ -44,7 +44,7 @@ web:
           force_nonstatic_ssl: true
           deploy_version: '1'
 app:
-    count: 4
+    count: 6
     scope: lane
     keypair: jgaigalas_key
     configs:
@@ -60,7 +60,7 @@ app:
             slavedb:
                 select_one:
                     role: slavedb
-                    group: false # default false
+                    group: true # default false
                     # scope: zone
 
 masterdb:
@@ -70,7 +70,7 @@ masterdb:
 
 
 slavedb:
-    count: 1
+    count: 2
     scope: zone
 
 

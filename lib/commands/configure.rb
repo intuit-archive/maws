@@ -2,22 +2,24 @@ require 'lib/command'
 require 'erubis'
 require 'net/ssh'
 require 'net/scp'
-require 'open3'
 
 class Configure < Command
   TEMPLATE_DIR = "config/templates/"
   TEMPLATE_OUTPUT_DIR = "tmp/"
   KEYPAIR_DIR = "config/keypairs/"
+
   def run!
     @selected_instances.each do |instance|
       role = instance.role
       instance_config = @profile.profile_for_role(role.name).config
       instance_config.configs.each do |config_file|
+
         config_file = config_file.dup
         template_file = config_file.delete(:template)
         remote_config = config_file.delete(:remote)
         config_file.delete(:copy_cap_command)
 
+        info "configuring #{template_file} for #{instance.name}"
         # prepare params for config file interpolation
         params = {}
         config_file.each do |param, value|
@@ -28,6 +30,8 @@ class Configure < Command
         template_path = TEMPLATE_DIR + template_file + ".erb"
         template = File.read(template_path)
         generated_config =  Erubis::Eruby.new(template).result(params)
+        puts params['slavedb'].name
+        next
 
         config_output_path = TEMPLATE_OUTPUT_DIR + "#{instance.name}--#{instance.aws_id}." + template_file
         info "generated  '#{config_output_path}'"
@@ -53,7 +57,7 @@ class Configure < Command
       ssh.scp.upload!(config_output_path, remote_config.location)
 
       timestamp = ssh.exec!("stat -c %y #{remote_config.location}")
-      info "            new timestamp: " + timestamp
+      info "            new timestamp (for #{remote_config.location}): " + timestamp
 
       info "   executing stop command: " + remote_config.stop
       ssh.exec!(remote_config.stop)
@@ -90,7 +94,9 @@ class Configure < Command
     @available_instances_index[[instance.role, config_name]] = pick_index + 1
 
     if select_one_configs.group
-      raise "select_one: group parameter not implemented"
+      total_instances_for_role = @selected_instances.select {|i| i.role.name == instance.role.name}.count
+      group_size = total_instances_for_role/pick_from.count
+      index = (pick_index / group_size) % pick_from.count
     else
       index = pick_index % pick_from.count
     end
