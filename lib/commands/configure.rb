@@ -30,8 +30,6 @@ class Configure < Command
         template_path = TEMPLATE_DIR + template_file + ".erb"
         template = File.read(template_path)
         generated_config =  Erubis::Eruby.new(template).result(params)
-        puts params['slavedb'].name
-        next
 
         config_output_path = TEMPLATE_OUTPUT_DIR + "#{instance.name}--#{instance.aws_id}." + template_file
         info "generated  '#{config_output_path}'"
@@ -60,10 +58,12 @@ class Configure < Command
       info "            new timestamp (for #{remote_config.location}): " + timestamp
 
       info "   executing stop command: " + remote_config.stop
-      ssh.exec!(remote_config.stop)
+      result = ssh.exec!(remote_config.stop)
+      info result if result
 
       info "   executing start command: " + remote_config.start
-      ssh.exec!(remote_config.start)
+      result = ssh.exec!(remote_config.start)
+      info result if result
     end
 
     puts "...done (disconnected from '#{user}@#{host}')\n\n"
@@ -77,10 +77,32 @@ class Configure < Command
     elsif value.select_one
       prepare_select_one_template_value(instance, name, value.select_one)
     elsif value.select_many
-      prepare_select_many_template_value(instance, value.select_many)
+      prepare_select_many_template_value(instance, name, value.select_many)
     else value
     end
   end
+
+  def prepare_select_many_template_value(instance, config_name, select_many_config)
+    if select_many_config.chunk_size.to_i > 0
+      @chunk_indexes ||=  {}
+      @chunk_indexes[[instance.role, config_name]] ||= 0
+
+      chunk_index = @chunk_indexes[[instance.role, config_name]]
+      @chunk_indexes[[instance.role, config_name]] += 1
+
+      chunk_size = select_many_config.chunk_size.to_i
+      available_instances = @profile.instances_for_role(select_many_config.role)
+
+      start_index = (chunk_index * chunk_size) % available_instances.count
+
+      # make a very long repeating list for simple slicing with guarantee of no overflow
+      # even if chunk size is much bigger than available instances
+      (available_instances * chunk_size)[start_index,chunk_size].uniq
+    else
+      @profile.instances_for_role(select_many_config.role)
+    end
+  end
+
 
   def prepare_select_one_template_value(instance, config_name, select_one_configs)
     @available_instances ||= {}

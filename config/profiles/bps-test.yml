@@ -22,29 +22,20 @@ web:
     keypair: jgaigalas_key
     configs:
         -
-          template: '/etc/httpd/conf/proxy.conf'
+          template: 'httpd-vhosts.conf'
           remote:
-              location: '/etc/httpd/conf/proxy.conf'
+              location: '/usr/local/apache2/conf/httpd-vhosts.conf'
+              stop: 'service httpd2 stop'
+              start: 'service httpd2 start'
           balancer: self
           balancer_members:
               select_many:
                   role: app
                   # scope: zone
-                  # count: all
-                  # distribute: all | split
-                  # count: 12
+                  # chunk_size: 3
 
-        -
-          template: 'vhosts'
-          copy_to_location: '/etc/path/to/vhosts'
-          server_aliases: ''
-          community_name: 'turbotax'
-          environment: 'perf'
-          public_access: true
-          force_nonstatic_ssl: true
-          deploy_version: '1'
 app:
-    count: 6
+    count: 4
     scope: lane
     keypair: jgaigalas_key
     configs:

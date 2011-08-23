@@ -1,6 +1,0 @@
-# The app servers below will be get requests from this web server <%= balancer.name %>
-<Proxy balancer://turbotax_cluster>
-<% balancer_members.each do |member| %>
-	BalancerMember http://<%= member.private_dns_name %>:8080
-<% end %>
-</Proxy>
