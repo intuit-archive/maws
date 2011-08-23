@@ -63,7 +63,7 @@ class Configure < Command
 
       info "   executing start command: " + remote_config.start
       result = ssh.exec!(remote_config.start)
-      info result if result
+      info "      " + result if result
     end
 
     puts "...done (disconnected from '#{user}@#{host}')\n\n"
