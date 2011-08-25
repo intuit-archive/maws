@@ -1,6 +1,9 @@
-# require 'right_aws'
-require '/Users/jgaigalas/src/right_aws/lib/right_aws'
-require 'lib/logger'
+if `whoami`.chomp == "jgaigalas"
+  puts "DEBUG: requiring local right_aws gem"
+  require '/Users/jgaigalas/src/right_aws/lib/right_aws'
+else
+  require 'lib/logger'
+end
 
 class AwsConnection
   def initialize(keyid, key, options)
