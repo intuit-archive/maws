@@ -1,14 +1,6 @@
 require 'yaml'
 require 'lib/profile'
 
-class Hashie::Mash
-  undef :count # usually count is the number of keys mash has
-end
-
-def mash x
-  Hashie::Mash.new x
-end
-
 require 'lib/logger'
 require 'lib/trollop'
 
@@ -88,8 +80,8 @@ class CommandParser
   end
 
   def verify_profile
-    unless @profile.missing_roles.empty?
-      Trollop::die "Undefined roles [%s] in profile '%s'" % [@profile.missing_roles.join(', '), @profile.name]
+    unless @profile.missing_role_names.empty?
+      Trollop::die "Undefined roles [%s] in profile '%s'" % [@profile.missing_role_names.join(', '), @profile.name]
     end
   end
 
@@ -132,7 +124,7 @@ class CommandParser
     command_opts[:availability_zone] = command_opts[:region] + command_opts[:zone]
 
     @command.options = mash command_opts
-    @profile.options = @command.options
+    @profile.command_options = @command.options
   end
 
   def usage(profile='profile', command='command')

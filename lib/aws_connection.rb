@@ -6,12 +6,15 @@ else
 end
 
 class AwsConnection
+  attr_accessor :silent
+
   def initialize(keyid, key, options)
     @access_key_id = keyid
     @secret_key = key
     @options = options
 
-    @params = {:region => @options.region, :logger => $logger}
+    @params = {:region => @options.region, :logger => $right_aws_logger}
+    @silent = false
     info "ZONE: #{@options.availability_zone}\n\n"
   end
 
@@ -25,9 +28,9 @@ class AwsConnection
 
   def ec2_descriptions
     return @ec2_descriptions if @ec2_descriptions
-    info "Fetching all EC2 instances info from AWS..."
+    info "fetching all EC2 instances info from AWS..." unless @silent
     @ec2_descriptions = ec2.describe_instances
-    info "...done (received #{@ec2_descriptions.count} EC2 descriptions from AWS)"
+    info "...done (received #{@ec2_descriptions.count} EC2 descriptions from AWS)\n\n" unless @silent
 
     @ec2_descriptions
   end
@@ -35,9 +38,9 @@ class AwsConnection
   def rds_descriptions
     return @rds_descriptions if @rds_descriptions
 
-    info "Fetching all RDS instances info from AWS..."
+    info "fetching all RDS instances info from AWS..." unless @silent
     @rds_descriptions = rds.describe_db_instances
-    info "...done (received #{@rds_descriptions.count} RDS descriptions from AWS)\n\n\n"
+    info "...done (received #{@rds_descriptions.count} RDS descriptions from AWS)\n\n" unless @silent
 
     @rds_descriptions
   end

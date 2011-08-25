@@ -20,39 +20,40 @@ web:
     count: 2
     scope: lane
     keypair: jgaigalas_key
-    configs:
+    configurations:
         -
           template: 'httpd-vhosts.conf'
           remote:
               location: '/usr/local/apache2/conf/httpd-vhosts.conf'
               stop: 'service httpd2 stop'
               start: 'service httpd2 start'
-          balancer: self
-          balancer_members:
-              select_many:
-                  role: app
-                  # scope: zone
-                  # chunk_size: 3
+          template_params:
+              balancer: self
+              balancer_members:
+                  select_many:
+                      role: app
+                      # scope: zone
+                      chunk_size: 3
 
 app:
     count: 4
     scope: lane
     keypair: jgaigalas_key
-    configs:
+    configurations:
         -
             template: 'database.yml'
             remote:
                 location: '/bps/site/config/database.yml'
                 stop: 'su - bps -c "cd /bps/site; if [ -e tmp/pids/unicorn.pid ]; then <tmp/pids/unicorn.pid xargs kill; fi"'
                 start: 'su - bps -c "cd /bps/site; bundle exec unicorn_rails -c config/unicorn.rb -E production -D"'
-            server: self
-            masterdb:
-                select_one: masterdb
-            slavedb:
-                select_one:
-                    role: slavedb
-                    group: true # default false
-                    # scope: zone
+            template_params:
+                server: self
+                masterdb:
+                    select_one: masterdb
+                slavedb:
+                    select_one:
+                        role: slavedb
+                        # scope: zone
 
 masterdb:
     count: 1

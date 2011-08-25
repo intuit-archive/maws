@@ -4,15 +4,15 @@ class Command
   attr_accessor :options
   attr_reader :connection
 
-  def initialize(profile, roles)
+  def initialize(profile, roles_config)
     @profile = profile
-    @roles = roles
+    @roles_config = roles_config
   end
 
   def connection=(connection)
     @connection = connection
     sync_profile_instances
-    select_instances_by_command_options
+    @profile.select_instances_by_command_options
   end
 
   def run!
@@ -20,7 +20,7 @@ class Command
   end
 
   def add_generic_options(parser)
-    available_roles = @roles.keys.join(', ')
+    available_roles = @roles_config.keys.join(', ')
     parser.opt :roles, "List of roles (available: #{available_roles})", :type => :strings
     parser.opt :names, "Names of machines", :type => :strings
     parser.opt :all, "All roles", :short => '-A', :type => :flag
@@ -34,25 +34,16 @@ class Command
   def verify_options
   end
 
+  def specified_instances
+    @profile.specified_instances
+  end
+
   protected
   def sync_profile_instances
-    @profile.all_instances.each do |i|
+    @profile.defined_instances.each do |i|
       i.connection = @connection
       i.sync
     end
   end
 
-  def select_instances_by_command_options
-    @selected_instances = if options.all
-      @profile.all_instances
-    else
-      @profile.all_instances.select do |i|
-        if options.roles
-          options.roles.include? i.role.name
-        elsif options.names
-          options.names.include? i.name
-        end
-      end
-    end
-  end
 end

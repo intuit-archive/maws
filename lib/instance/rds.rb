@@ -10,34 +10,41 @@ class Instance::RDS < Instance
 
   def create
     return if exists_on_aws?
-    az_options = if profile.profile_for_role(role.name).config.scope == 'region' && !role.replica
-      {:multi_az => true}
-    else
-      {:availability_zone => options.availability_zone}
-    end
 
-    if role.replica
+    if @role_config.replica
+      # READ REPLICA
       info "creating RDS Read Replica #{name}..."
-      source_instance = profile.profile_for_role(role.name).select_one_of_role(role.source_role)
+      source_role_name = @role_config.source_role
+      source_instance = @profile.select_first_instance(:defined, source_role_name)
+
       unless source_instance.valid_read_replica_source?
         error "...can't create read replica - source rds #{source_instance.name} is not valid (#{source_instance.status})!"
         return
       end
 
-      result = connection.rds.create_db_instance_read_replica(name, source_instance.name, :instance_class => role.instance_class)
+      result = connection.rds.create_db_instance_read_replica(name, source_instance.name,
+                      :instance_class => @role_config.instance_class,
+                      :availability_zone => @command_options.availability_zone)
     else
-      info "creating RDS #{name}..."
-      create_opts = {:instance_class => role.instance_class,
-      :allocated_storage => role.allocated_storage,
-      :db_security_groups => role.security_groups,
-      :db_name => role.db_name || profile.profile_for_role(role.name).config.db_name}.merge(az_options)
+      # MASTER DB
+      az_options = if @profile_role_config.scope == 'region'
+        {:multi_az => true}
+      else
+        {:availability_zone => @command_options.availability_zone}
+      end
 
-      result = connection.rds.create_db_instance(name, role.master_username, role.master_password, create_opts)
+      info "creating RDS #{name}..."
+      create_opts = {:instance_class => @role_config.instance_class,
+      :allocated_storage => @role_config.allocated_storage,
+      :db_security_groups => @role_config.security_groups,
+      :db_name => @role_config.db_name || @profile_role_config.db_name}.merge(az_options)
+
+      result = connection.rds.create_db_instance(name, @role_config.master_username, @role_config.master_password, create_opts)
 
     end
 
     self.aws_description = result
-    info "...done (RDS #{name} is ready)"
+    info "...done (RDS #{name} is ready)\n\n"
   end
 
   def destroy
@@ -47,7 +54,7 @@ class Instance::RDS < Instance
       info "can't destroy RDS #{@aws_id} while it is #{@status}"
       return
     end
-    connection.rds.delete_db_instance(@aws_id)
+    connection.rds.delete_db_instance(@aws_id, :skip_final_snapshot => true)
     info "destroying RDS #{@aws_id}"
   end
 
@@ -59,7 +66,7 @@ class Instance::RDS < Instance
   end
 
   def valid_read_replica_source?
-    exists_on_aws? && !role.replica
+    exists_on_aws? && !@role_config.replica
   end
 
 end

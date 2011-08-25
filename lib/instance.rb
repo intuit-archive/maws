@@ -1,6 +1,6 @@
 class Instance
   attr_accessor :name, :role, :connection, :profile, :options
-  attr_reader :aws_id, :aws_description, :status
+  attr_reader :aws_id, :aws_description, :status, :role_config, :profile_role_config
 
   def self.new_for_service(service, *args)
     klass = case service.to_sym
@@ -12,13 +12,17 @@ class Instance
     klass.new(*args)
   end
 
-  def initialize(name, status, role, profile, options)
+  def initialize(name, status, profile, role_config, profile_role_config, command_options)
     @name = name
     @status = status
-    @role = role
     @profile = profile
-    @options = options
+
+    @role_config = role_config
+    @profile_role_config = profile_role_config
+    @command_options = command_options
+
     @aws_id = nil
+    @aws_description = {}
   end
 
   def sync
@@ -28,6 +32,9 @@ class Instance
     else
       @status = 'non-existant'
     end
+  end
+
+  def settings(key)
   end
 
   def synced?
@@ -55,8 +62,8 @@ class Instance
     "<Instance #{to_s}>"
   end
 
-  def profile_for_role
-    @profile
+  def role_name
+    @role_config.name
   end
 
   def has_approximate_status?(status)
@@ -68,7 +75,10 @@ class Instance
   end
 
   def method_missing(method_name, *args, &block)
-    @role[method_name] || @profile.profile_for_role(role.name).config[method_name] || aws_description[method_name] || options[method_name]
+    @role_config[method_name] ||
+    @profile_role_config[method_name] ||
+    @aws_description[method_name] ||
+    @command_options[method_name]
   end
 end
 

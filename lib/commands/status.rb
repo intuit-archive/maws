@@ -11,7 +11,7 @@ class Status < Command
                                                 KEYPAIR"
 
     # instances = options.force ? @profile.all_instances : @selected_instances
-    @selected_instances.each {|i| puts instance_to_s(i)}
+    specified_instances.each {|i| puts instance_to_s(i)}
   end
 
   def instance_to_s(instance)
@@ -28,7 +28,7 @@ class Status < Command
     status_padding = " " * (col_width-status.length)
 
 
-    name.to_s + name_padding + status + status_padding + dns_name + "\t" +instance.keypair.to_s
+    name.to_s + name_padding + status + status_padding + dns_name + "\t" + instance.keypair.to_s
   end
 
   def display_status(status)
