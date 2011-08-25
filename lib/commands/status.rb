@@ -1,4 +1,5 @@
 require 'lib/command'
+require 'terminal-table/import'
 
 class Status < Command
   def add_specific_options(parser)
@@ -7,14 +8,12 @@ class Status < Command
   end
 
   def run!
-    puts "NAME                     STATUS                   SERVER\
-                                                KEYPAIR"
-
-    # instances = options.force ? @profile.all_instances : @selected_instances
-    specified_instances.each {|i| puts instance_to_s(i)}
+    t = table %w(NAME STATUS SERVER KEYPAIR)
+    specified_instances.each {|i| t << instance_to_table_row(i)}
+    puts t
   end
 
-  def instance_to_s(instance)
+  def instance_to_table_row(instance)
     name = instance.name
     status =  display_status(instance.status)
     dns_name = if instance.dns_name
@@ -23,12 +22,7 @@ class Status < Command
       ""
     end
 
-    col_width = 25
-    name_padding = " " * (col_width-name.length)
-    status_padding = " " * (col_width-status.length)
-
-
-    name.to_s + name_padding + status + status_padding + dns_name + "\t" + instance.keypair.to_s
+    [name.to_s, status, dns_name, instance.keypair.to_s]
   end
 
   def display_status(status)
