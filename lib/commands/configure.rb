@@ -8,6 +8,11 @@ class Configure < Command
   TEMPLATE_OUTPUT_DIR = "tmp/"
   KEYPAIR_DIR = "config/keypairs/"
 
+
+  def add_specific_options(parser)
+    parser.opt :dump, "Dump config files before uploading them", :type => :flag, :default => false
+  end
+
   def run!
     specified_instances.each do |instance|
       next unless instance.status == 'running'
@@ -29,13 +34,19 @@ class Configure < Command
         info "generated  '#{config_output_path}'"
         File.open(config_output_path, "w") {|f| f.write(generated_config)}
 
-        upload_and_restart(config_output_path, instance, instance_config, remote_config)
+        if options.dump
+          info "\n\n------- BEGIN #{config_output_path} -------"
+          info generated_config
+          info "-------- END #{config_output_path} --------\n\n"
+        end
+
+        upload_and_restart(config_output_path, instance, configuration)
       end
     end
   end
 
-  def upload_and_restart(config_output_path, instance, instance_config, remote_config)
-    keypair_file = KEYPAIR_DIR + instance_config.keypair + ".pem"
+  def upload_and_restart(config_output_path, instance, configuration)
+    keypair_file = KEYPAIR_DIR + instance.keypair + ".pem"
     host = instance.dns_name
     user = "root"
 
@@ -46,17 +57,17 @@ class Configure < Command
               :verbose => :warn,
               :auth_methods => 'publickey') do |ssh|
 
-      ssh.scp.upload!(config_output_path, remote_config.location)
+      ssh.scp.upload!(config_output_path, configuration.remote.location)
 
-      timestamp = ssh.exec!("stat -c %y #{remote_config.location}")
-      info "            new timestamp (for #{remote_config.location}): " + timestamp
+      timestamp = ssh.exec!("stat -c %y #{configuration.remote.location}")
+      info "            new timestamp (for #{configuration.remote.location}): " + timestamp
 
-      info "   executing stop command: " + remote_config.stop
-      result = ssh.exec!(remote_config.stop)
+      info "   executing stop command: " + configuration.remote.stop
+      result = ssh.exec!(configuration.remote.stop)
       info result if result
 
-      info "   executing start command: " + remote_config.start
-      result = ssh.exec!(remote_config.start)
+      info "   executing start command: " + configuration.remote.start
+      result = ssh.exec!(configuration.remote.start)
       info "      " + result if result
     end
 
@@ -78,67 +89,14 @@ class Configure < Command
       @profile.register_instance_source(context, :defined, param_config.select_one.role, 1, param_config.select_one.scope)
 
       @profile.next_instances_chunk(context).first
-      # @profile.next_instances_chunk(:define, param_config.select_one.role, )
-      # prepare_select_one_template_value(instance, name, value.select_one)
 
     elsif param_config.select_many
       context = "#{instance.role_name}-#{template_name}-#{param_name}"
-      # chunk_size = param_config.select_many.chunk_size.to_i > 0 ?  param_config.select_many.chunk_size.to_i : nil
       @profile.register_instance_source(context, :defined, param_config.select_many.role, param_config.select_many.chunk_size, param_config.select_many.scope)
       @profile.next_instances_chunk(context)
-
-      # prepare_select_many_template_value(instance, name, value.select_many)
 
     else
       param_config
     end
   end
-
-  # def prepare_select_many_template_value(instance, config_name, select_many_config)
-  #   if select_many_config.chunk_size.to_i > 0
-  #     @profile.next_instances_chunk(:defined, select_many_config.role, select_many_config.chunk_size.to_i, 1, instance.role)
-  #
-  #
-  #     # @chunk_indexes ||=  {}
-  #     # @chunk_indexes[[instance.role, config_name]] ||= 0
-  #     #
-  #     # chunk_index = @chunk_indexes[[instance.role, config_name]]
-  #     # @chunk_indexes[[instance.role, config_name]] += 1
-  #     #
-  #     # chunk_size = select_many_config.chunk_size.to_i
-  #     # available_instances = @profile.instances_for_role(select_many_config.role)
-  #     #
-  #     # start_index = (chunk_index * chunk_size) % available_instances.count
-  #     #
-  #     # # make a very long repeating list for simple slicing with guarantee of no overflow
-  #     # # even if chunk size is much bigger than available instances
-  #     # (available_instances * chunk_size)[start_index,chunk_size].uniq
-  #   else
-  #     @profile.next_instances_chunk(:defined, select_many_config.role, nil, 1, nil)
-  #     # @profile.instances_for_role(select_many_config.role)
-  #   end
-  # end
-  #
-  #
-  # def prepare_select_one_template_value(instance, config_name, select_one_configs)
-  #   @available_instances ||= {}
-  #   @available_instances_index ||= {}
-  #
-  #   @available_instances[[instance.role, config_name]] ||= @profile.instances_for_role(select_one_configs.role)
-  #   @available_instances_index[[instance.role, config_name]] ||= 0
-  #
-  #   pick_from = @available_instances[[instance.role, config_name]]
-  #   pick_index = @available_instances_index[[instance.role, config_name]]
-  #   @available_instances_index[[instance.role, config_name]] = pick_index + 1
-  #
-  #   if select_one_configs.group
-  #     total_instances_for_role = @selected_instances.select {|i| i.role.name == instance.role.name}.count
-  #     group_size = total_instances_for_role/pick_from.count
-  #     index = (pick_index / group_size) % pick_from.count
-  #   else
-  #     index = pick_index % pick_from.count
-  #   end
-  #
-  #   pick_from[index]
-  # end
 end
