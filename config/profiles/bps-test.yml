@@ -16,6 +16,10 @@ lanes: 5
 #     scope: zone
 
 
+lbweb:
+    count: 1
+    scope: region
+
 web:
     count: 1
     scope: lane

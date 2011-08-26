@@ -31,11 +31,14 @@ class AwsConnection
     @elb ||= RightAws::ElbInterface.new(@access_key_id, @secret_key, @params.dup)
   end
 
+  def availability_zones
+    @availability_zones ||= ec2.describe_availability_zones(:filters => {'region-name' => @options.region}).map{|description| description[:zone_name]}
+  end
+
   def ec2_descriptions
     return @ec2_descriptions if @ec2_descriptions
-    info "fetching all EC2 instances info from AWS..." unless @silent
     @ec2_descriptions = ec2.describe_instances
-    info "...done (received #{@ec2_descriptions.count} EC2 descriptions from AWS)\n\n" unless @silent
+    info "        (EC2 #{@ec2_descriptions.count} total in the region)\n\n" unless @silent
 
     @ec2_descriptions
   end
@@ -43,9 +46,8 @@ class AwsConnection
   def rds_descriptions
     return @rds_descriptions if @rds_descriptions
 
-    info "fetching all RDS instances info from AWS..." unless @silent
     @rds_descriptions = rds.describe_db_instances
-    info "...done (received #{@rds_descriptions.count} RDS descriptions from AWS)\n\n" unless @silent
+    info "        (RDS #{@rds_descriptions.count} total in the region)\n\n" unless @silent
 
     @rds_descriptions
   end
@@ -53,35 +55,40 @@ class AwsConnection
   def elb_descriptions
     return @elb_descriptions if @elb_descriptions
 
-    @elb_descriptions ||= elb.describe_load_balancers
+    @elb_descriptions = elb.describe_load_balancers
+    info "        (ELB #{@elb_descriptions.count} total in the region)\n\n" unless @silent
+
+    @elb_descriptions
   end
 
   def clear_cached_descriptions
     @rds_descriptions = nil
     @ec2_descriptions = nil
     @elb_descriptions = nil
+
+    @name_grouped_descriptions = nil
   end
 
-  def ec2_name_grouped_descriptions
-    ec2_name_grouped_descriptions = {}
-    ec2_descriptions.each do |d|
-      name = d[:tags]["Name"] || d[:aws_instance_id]
-      ec2_name_grouped_descriptions[name] = d
+  def description_for_name(name, service_name)
+    @name_grouped_descriptions = {}
+    return @name_grouped_descriptions[service_name][name] if @name_grouped_descriptions[service_name]
+
+    @name_grouped_descriptions[service_name] = {}
+
+    if service_name == 'ec2'
+      ec2_descriptions.each do |description|
+        @name_grouped_descriptions[service_name][Instance::EC2.description_name(description)] = description
+      end
+    elsif service_name == 'rds'
+      rds_descriptions.each do |description|
+        @name_grouped_descriptions[service_name][Instance::RDS.description_name(description)] = description
+      end
+    elsif service_name == 'elb'
+      elb_descriptions.each do |description|
+        @name_grouped_descriptions[service_name][Instance::ELB.description_name(description)] = description
+      end
     end
 
-    ec2_name_grouped_descriptions
-  end
-
-  def rds_name_grouped_descriptions
-    rds_name_grouped_descriptions = {}
-    rds_descriptions.each do |description|
-      rds_name_grouped_descriptions[description[:aws_id]] = description
-    end
-
-    rds_name_grouped_descriptions
-  end
-
-  def description_for_name name
-    ec2_name_grouped_descriptions[name] || rds_name_grouped_descriptions[name]
+    @name_grouped_descriptions[service_name][name]
   end
 end

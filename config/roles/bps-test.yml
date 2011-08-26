@@ -1,3 +1,25 @@
+lbweb:
+    service: elb
+    listeners:
+        -
+            protocol: http
+            # protocol: tcp
+            load_balancer_port: 80
+            instance_port: 8080
+        -
+            # protocol: http
+            protocol: tcp
+            load_balancer_port: 1111
+            instance_port: 2222
+    health_check:
+        target: "HTTP:80/"
+        # target: "TCP:1001"
+        interval: 30
+        timeout: 5
+        healthy_threshold: 6
+        unhealthy_threshold: 2
+
+
 web:
     service: ec2
     image_id: 'ami-572eef3e'

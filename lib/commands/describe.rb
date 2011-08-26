@@ -11,4 +11,8 @@ class Describe < Command
       info "+-----------------------------------------------------------------+\n\n\n"
     end
   end
+
+  def sync_only_specified?
+    true
+  end
 end

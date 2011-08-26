@@ -11,8 +11,8 @@ class Command
 
   def connection=(connection)
     @connection = connection
-    sync_profile_instances
     @profile.select_instances_by_command_options
+    sync_profile_instances
   end
 
   def run!
@@ -34,13 +34,18 @@ class Command
   def verify_options
   end
 
+  def sync_only_specified?
+    false
+  end
+
   def specified_instances
     @profile.specified_instances
   end
 
   protected
   def sync_profile_instances
-    @profile.defined_instances.each do |i|
+    sync_instances = sync_only_specified? ? @profile.specified_instances : @profile.defined_instances
+    sync_instances.each do |i|
       i.connection = @connection
       i.sync
     end

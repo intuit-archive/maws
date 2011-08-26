@@ -70,6 +70,9 @@ class Instance::RDS < Instance
     exists_on_aws? && !@role_config.replica
   end
 
+  def self.description_name(description)
+    description[:aws_id]
+  end
 end
 
 # example rds description

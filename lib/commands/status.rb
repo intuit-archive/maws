@@ -18,7 +18,11 @@ class Status < Command
     name = instance.name
     status =  display_status(instance.status)
     dns_name = if instance.dns_name
-      "root@" + instance.dns_name
+      if instance.is_a? Instance::EC2
+        "root@" + instance.dns_name
+      else
+        instance.dns_name
+      end
     else
       ""
     end
@@ -35,4 +39,7 @@ class Status < Command
     end
   end
 
+  def sync_only_specified?
+    true
+  end
 end

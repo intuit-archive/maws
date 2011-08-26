@@ -6,6 +6,7 @@ class Instance
     klass = case service.to_sym
     when :ec2 : Instance::EC2
     when :rds : Instance::RDS
+    when :elb : Instance::ELB
     else raise "No such service: #{service}"
     end
 
@@ -26,15 +27,12 @@ class Instance
   end
 
   def sync
-    description = @connection.description_for_name(name)
+    description = @connection.description_for_name(name, @role_config.service)
     if description
       self.aws_description = description
     else
       @status = 'non-existant'
     end
-  end
-
-  def settings(key)
   end
 
   def synced?
@@ -84,6 +82,7 @@ end
 
 require 'lib/instance/ec2'
 require 'lib/instance/rds'
+require 'lib/instance/elb'
 
 
 # build all
