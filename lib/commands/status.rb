@@ -8,10 +8,15 @@ class Status < Command
   end
 
   def run!
-    return if specified_instances.empty?
-    t = table %w(NAME STATUS SERVER KEYPAIR)
-    specified_instances.each {|i| t << instance_to_table_row(i)}
-    puts t
+    if specified_instances.empty?
+      puts table(table_header, Array.new(table_header.size, ""))
+    else
+      puts table(table_header, *specified_instances.map { |instance| instance_to_table_row(instance) })
+    end
+  end
+
+  def table_header
+    ["NAME", "STATUS", "SERVER", "KEYPAIR"]
   end
 
   def instance_to_table_row(instance)
