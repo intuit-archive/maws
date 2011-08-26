@@ -1,5 +1,5 @@
 roles: 'bps-test'
-lanes: 1
+lanes: 5
 
 # loadbalancer:
 #     count: 2
@@ -17,35 +17,37 @@ lanes: 1
 
 
 web:
+    count: 1
+    scope: lane
+    keypair: jgaigalas_key
+    configurations:
+        -
+            name: vhosts
+            template: 'httpd-vhosts.conf'
+            location: '/usr/local/apache2/conf/httpd-vhosts.conf'
+            template_params:
+                balancer: self
+                balancer_members:
+                    select_many:
+                        role: app
+                        # scope: region
+                        chunk_size: 3
+        -
+            name: stop
+            command: 'service httpd2 stop'
+        -
+            namse: start
+            command: 'service httpd2 start'
+
+app:
     count: 2
     scope: lane
     keypair: jgaigalas_key
     configurations:
         -
-          template: 'httpd-vhosts.conf'
-          remote:
-              location: '/usr/local/apache2/conf/httpd-vhosts.conf'
-              stop: 'service httpd2 stop'
-              start: 'service httpd2 start'
-          template_params:
-              balancer: self
-              balancer_members:
-                  select_many:
-                      role: app
-                      # scope: zone
-                      chunk_size: 3
-
-app:
-    count: 4
-    scope: lane
-    keypair: jgaigalas_key
-    configurations:
-        -
+            name: database
             template: 'database.yml'
-            remote:
-                location: '/bps/site/config/database.yml'
-                stop: 'su - bps -c "cd /bps/site; if [ -e tmp/pids/unicorn.pid ]; then <tmp/pids/unicorn.pid xargs kill; fi"'
-                start: 'su - bps -c "cd /bps/site; bundle exec unicorn_rails -c config/unicorn.rb -E production -D"'
+            location: '/bps/site/config/database.yml'
             template_params:
                 server: self
                 masterdb:
@@ -53,7 +55,14 @@ app:
                 slavedb:
                     select_one:
                         role: slavedb
-                        # scope: zone
+                        scope: region
+        -
+            name: stop
+            command: 'su - bps -c "cd /bps/site; if [ -e tmp/pids/unicorn.pid ]; then <tmp/pids/unicorn.pid xargs kill; fi"'
+        -
+            name: start
+            command: 'su - bps -c "cd /bps/site; bundle exec unicorn_rails -c config/unicorn.rb -E production -D"'
+
 
 masterdb:
     count: 1

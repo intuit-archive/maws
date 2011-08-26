@@ -8,36 +8,6 @@ def mash x
   Hashie::Mash.new x
 end
 
-
-# class ProfileForRole
-#   attr_reader :config
-#
-#   def initialize(profile, role_profile_config)
-#     @profile = profile
-#     @config = role_profile_config
-#   end
-#
-#   def select_one_of_role(name)
-#     @profile.instances_for_role(name).first
-#   end
-# end
-
-# class InstanceSet
-#   include Enumerable
-#
-#   def initialize(instances)
-#     @instances = instances
-#   end
-#
-#   def each(&block)
-#     @instances.each(&block)
-#   end
-#
-#   def select_next_chunk(role_name, chunk_size, context_name)
-#
-#   end
-# end
-
 class Profile
   RESERVED_ROLE_NAMES = %w(roles lanes name)
   attr_reader :all_instances, :defined_instances, :specified_instances

@@ -2,6 +2,7 @@ if `whoami`.chomp == "jgaigalas"
   puts "DEBUG: requiring local right_aws gem"
   require '/Users/jgaigalas/src/right_aws/lib/right_aws'
 else
+  require 'right_aws'
   require 'lib/logger'
 end
 

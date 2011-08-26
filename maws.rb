@@ -37,3 +37,5 @@ command.run!
 # get images
 # generate configs and upload images
 
+
+# remote.restart for graceful apache restart
