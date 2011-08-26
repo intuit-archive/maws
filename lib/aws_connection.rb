@@ -20,6 +20,11 @@ class AwsConnection
   end
 
   def ec2
+    # The right_aws gem parses the EC2_URL environment variable if it is set. The EC2 CLI tools also use that variable
+    # but expect the hostname to be region-specific (e.g., us-east-1.ec2.amazonaws.com) instead of generic
+    # (e.g., ec2.amazonaws.com). To avoid conflicts, unset the variable here and use the right_aws default value.
+    ENV["EC2_URL"] = nil
+
     @ec2 ||= RightAws::Ec2.new(@access_key_id, @secret_key, @params.dup)
   end
 
