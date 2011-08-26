@@ -27,6 +27,10 @@ class AwsConnection
     @rds ||= RightAws::RdsInterface.new(@access_key_id, @secret_key, @params.dup)
   end
 
+  def elb
+    @elb ||= RightAws::ElbInterface.new(@access_key_id, @secret_key, @params.dup)
+  end
+
   def ec2_descriptions
     return @ec2_descriptions if @ec2_descriptions
     info "fetching all EC2 instances info from AWS..." unless @silent
@@ -46,9 +50,16 @@ class AwsConnection
     @rds_descriptions
   end
 
+  def elb_descriptions
+    return @elb_descriptions if @elb_descriptions
+
+    @elb_descriptions ||= elb.describe_load_balancers
+  end
+
   def clear_cached_descriptions
     @rds_descriptions = nil
     @ec2_descriptions = nil
+    @elb_descriptions = nil
   end
 
   def ec2_name_grouped_descriptions

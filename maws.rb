@@ -6,6 +6,16 @@ require 'hashie'
 require 'lib/command_parser'
 require 'lib/aws_connection'
 
+
+begin
+  # optional awesome print
+  require 'ap'
+rescue LoadError
+  def ap(x)
+    p x
+  end
+end
+
 def symbolize(*names)
   names.map {|n| n.to_sym}
 end
@@ -29,13 +39,4 @@ command.run!
 
 
 # generate security group names based on profile/role
-
-# problem?
-# db names/awsids can't be shared by rdses in different zones
-
-# add zone to name
-# get images
-# generate configs and upload images
-
-
-# remote.restart for graceful apache restart
+# destroy EBS for when destroying EC2 (RightAWS::EC2#delete_volume)

@@ -122,6 +122,9 @@ class CommandParser
       command.add_specific_options(self)
     end
     command_opts[:availability_zone] = command_opts[:region] + command_opts[:zone]
+    if command_opts[:names].nil? && command_opts[:roles].nil?
+      command_opts[:all] = true
+    end
 
     @command.options = mash command_opts
     @profile.command_options = @command.options

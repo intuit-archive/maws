@@ -140,7 +140,7 @@ class Profile
   end
 
   def select_instances_by_command_options
-    @specified_instances = if @command_options.all || (!@command_options.roles && !@command_options.names)
+    @specified_instances = if @command_options.all
       @defined_instances
     else
       @defined_instances.select do |i|
