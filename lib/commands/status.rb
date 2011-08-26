@@ -8,6 +8,7 @@ class Status < Command
   end
 
   def run!
+    return if specified_instances.empty?
     t = table %w(NAME STATUS SERVER KEYPAIR)
     specified_instances.each {|i| t << instance_to_table_row(i)}
     puts t
