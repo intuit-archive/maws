@@ -37,6 +37,7 @@ class Instance::RDS < Instance
       create_opts = {:instance_class => @role_config.instance_class,
       :allocated_storage => @role_config.allocated_storage,
       :db_security_groups => @role_config.security_groups,
+      :db_parameter_group => @role_config.parameter_group,
       :db_name => @role_config.db_name || @profile_role_config.db_name}.merge(az_options)
 
       result = connection.rds.create_db_instance(name, @role_config.master_username, @role_config.master_password, create_opts)

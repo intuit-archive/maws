@@ -23,6 +23,7 @@ masterdb:
     db_name:
     security_groups:
         - bps-db
+    parameter_group: 'bps-db'
 
 slavedb:
     service: rds
