@@ -3,7 +3,6 @@ if `whoami`.chomp == "jgaigalas"
   require '/Users/jgaigalas/src/right_aws/lib/right_aws'
 else
   require 'right_aws'
-  require 'lib/logger'
 end
 
 class AwsConnection
