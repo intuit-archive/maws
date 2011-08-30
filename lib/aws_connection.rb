@@ -95,4 +95,15 @@ class AwsConnection
 
     @name_grouped_descriptions[service_name][name]
   end
+
+  def image_id_for_image_name(image_name)
+    images = @ec2.describe_images(:filters => { 'tag:Name' => image_name})
+    if images.empty?
+      error "No AMI with name '#{image_name}'"
+    elsif images.count > 1
+      error "Ambigous AMI name: '#{image_name}'. Several AMIs match it #{images.collect{|i| i[:aws_id]}.join(', ')}"
+    else
+      images.first[:aws_id]
+    end
+  end
 end

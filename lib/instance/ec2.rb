@@ -12,7 +12,9 @@ class Instance::EC2 < Instance
   def create
     return if exists_on_aws?
     info "creating EC2 #{name}..."
-    results = connection.ec2.launch_instances(@role_config.image_id,
+    image_id = @role_config.image_id || connection.image_id_for_image_name(@role_config.image_name)
+    next if image_id.nil?
+    results = connection.ec2.launch_instances(image_id,
       :availability_zone => @command_options.availability_zone,
       :key_name => @profile_role_config.keypair,
       :min_count => 1,

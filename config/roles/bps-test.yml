@@ -22,7 +22,8 @@ lbweb:
 
 web:
     service: ec2
-    image_id: 'ami-572eef3e'
+    # image_id: 'ami-572eef3e'
+    image_name: 'ami-bps-test-web'
     instance_type: 'm1.large'
     security_groups:
         - bps-web
@@ -30,7 +31,8 @@ web:
 
 app:
     service: ec2
-    image_id: 'ami-c763a2ae'
+    # image_id: 'ami-c763a2ae'
+    image_name: 'ami-bps-test-app'
     instance_type: 'c1.xlarge'
     security_groups:
         - bps-app
