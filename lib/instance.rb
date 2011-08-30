@@ -78,6 +78,14 @@ class Instance
     @aws_description[method_name] ||
     @command_options[method_name]
   end
+
+  def config(key, required=false)
+    if required && @profile_role_config[key].nil? && @role_config[key].nil?
+      raise ArgumentError.new("Missing required config: #{key}")
+    end
+
+    @profile_role_config[key] || @role_config[key]
+  end
 end
 
 require 'lib/instance/ec2'

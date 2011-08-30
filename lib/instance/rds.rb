@@ -27,21 +27,30 @@ class Instance::RDS < Instance
                       :availability_zone => @command_options.availability_zone)
     else
       # MASTER DB
-      az_options = if @profile_role_config.scope == 'region'
-        {:multi_az => true}
+      create_opts = {}
+      create_opts[:engine] = config(:engine)
+      create_opts[:engine_version] = config(:engine_version)
+      create_opts[:instance_class] = config(:instance_class)
+      create_opts[:auto_minor_version_upgrade] = config(:auto_minor_version_upgrade)
+      create_opts[:allocated_storage] = config(:allocated_storage)
+      create_opts[:db_name] = config(:db_name)
+      create_opts[:db_parameter_group] = config(:db_parameter_group)
+      create_opts[:db_security_groups] = config(:db_security_groups)
+      create_opts[:backup_retention_period] = config(:backup_retention_period)
+      create_opts[:preferred_backup_window] = config(:preferred_backup_window)
+      create_opts[:preferred_maintenance_window] = config(:preferred_maintenance_window)
+
+      if config(:scope).eql?("region")
+        create_opts[:multi_az] = true
       else
-        {:availability_zone => @command_options.availability_zone}
+        create_opts[:availability_zone] = @command_options.availability_zone
       end
 
+      master_username = config(:master_username, true)
+      master_password = config(:master_password, true)
+
       info "creating RDS #{name}..."
-      create_opts = {:instance_class => @role_config.instance_class,
-      :allocated_storage => @role_config.allocated_storage,
-      :db_security_groups => @role_config.security_groups,
-      :db_parameter_group => @role_config.parameter_group,
-      :db_name => @role_config.db_name || @profile_role_config.db_name}.merge(az_options)
-
-      result = connection.rds.create_db_instance(name, @role_config.master_username, @role_config.master_password, create_opts)
-
+      result = connection.rds.create_db_instance(name, master_username, master_password, create_opts)
     end
 
     self.aws_description = result
