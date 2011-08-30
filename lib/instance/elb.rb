@@ -34,6 +34,24 @@ class Instance::ELB < Instance
   def stop
   end
 
+
+  def add_instances(instances)
+    names = instances.map{|i| i.name}
+    info "adding instances to ELB #{@aws_id}: #{names.join(', ')}"
+    connection.elb.register_instances_with_load_balancer(@aws_id, instances.map{|i| i.aws_id})
+  end
+
+  def remove_instances(instances)
+    names = instances.map{|i| i.name}
+    info "removing instances to ELB #{@aws_id}: #{names.join(', ')}"
+    connection.elb.deregister_instances_with_load_balancer(@aws_id, instances.map{|i| i.aws_id})
+  end
+
+  def instances
+    instance_ids = @aws_description[:instances]
+    @profile.defined_instances.select {|i| instance_ids.include?(i.aws_id)}
+  end
+
   def self.description_name(description)
     description[:load_balancer_name]
   end

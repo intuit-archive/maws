@@ -42,6 +42,16 @@ class Command
     @profile.specified_instances
   end
 
+  def pretty_describe(title, data)
+    info "++++++++++ " + title + " " + ("+" * (55 - title.length))
+    if data.is_a? String
+      info data
+    else
+      ap data
+    end
+    info "+-----------------------------------------------------------------+\n\n\n"
+  end
+
   protected
   def sync_profile_instances
     sync_instances = sync_only_specified? ? @profile.specified_instances : @profile.defined_instances

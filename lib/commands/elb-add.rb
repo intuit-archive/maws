@@ -1,11 +1,12 @@
 require 'lib/command'
+require 'lib/elb_command'
 require 'lib/trollop'
 
-class ElbAdd < Command
+class ElbAdd < ElbCommand
   def run!
-    puts "elb add!"
+    elbs, instances = partition_elbs_and_instances
+    return if elbs.nil? or instances.nil?
 
-    # ap @connection.availability_zones
-    # ap @connection.elb_descriptions[0]
+    elbs.each {|elb| elb.add_instances(instances)}
   end
 end
