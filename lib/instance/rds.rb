@@ -54,7 +54,7 @@ class Instance::RDS < Instance
     end
 
     self.aws_description = result
-    info "...done (RDS #{name} is ready)\n\n"
+    info "...done (RDS #{name} is being created)\n\n"
   end
 
   def destroy

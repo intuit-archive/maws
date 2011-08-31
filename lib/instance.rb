@@ -31,7 +31,9 @@ class Instance
     if description
       self.aws_description = description
     else
-      @status = 'non-existant'
+      @aws_description = {}
+      @aws_id = nil
+      @status = 'n/a'
     end
   end
 
