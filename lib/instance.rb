@@ -7,7 +7,7 @@ class Instance
     when :ec2 : Instance::EC2
     when :rds : Instance::RDS
     when :elb : Instance::ELB
-    else raise "No such service: #{service}"
+    else raise ArgumentError, "No such service: #{service}"
     end
 
     klass.new(*args)
@@ -75,8 +75,8 @@ class Instance
   end
 
   def method_missing(method_name, *args, &block)
-    @role_config[method_name] ||
     @profile_role_config[method_name] ||
+    @role_config[method_name] ||
     @aws_description[method_name] ||
     @command_options[method_name]
   end
