@@ -4,10 +4,7 @@ require 'net/ssh'
 require 'net/scp'
 
 class Configure < Command
-  TEMPLATE_DIR = "config/templates/"
-  TEMPLATE_OUTPUT_DIR = "tmp/"
-  KEYPAIR_DIR = "config/keypairs/"
-
+  TEMPLATE_OUTPUT_DIR = File.expand_path("tmp", BASE_PATH)
 
   def add_specific_options(parser)
     parser.opt :dump, "Dump config files before uploading them", :type => :flag, :default => false
@@ -39,7 +36,8 @@ class Configure < Command
   end
 
   def ssh_connect_to(instance)
-    keypair_file = KEYPAIR_DIR + instance.keypair + ".pem"
+    keypair_file = File.join(KEYPAIRS_PATH, instance.keypair + ".pem")
+
     host = instance.dns_name
     user = "root"
 
@@ -87,11 +85,11 @@ class Configure < Command
     end
 
     # generate config file
-    template_path = TEMPLATE_DIR + configuration.template + ".erb"
+    template_path = File.join(TEMPLATES_PATH, configuration.template + ".erb")
     template = File.read(template_path)
     generated_config =  Erubis::Eruby.new(template).result(resolved_params)
 
-    config_output_path = TEMPLATE_OUTPUT_DIR + "#{instance.name}--#{instance.aws_id}." + configuration.template
+    config_output_path = File.join(TEMPLATE_OUTPUT_DIR, "#{instance.name}--#{instance.aws_id}." + configuration.template)
     info "generated  '#{config_output_path}'"
     File.open(config_output_path, "w") {|f| f.write(generated_config)}
 

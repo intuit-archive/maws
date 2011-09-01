@@ -1,0 +1,5 @@
+aws_key_path: 'config/aws.key'
+keypairs_path: 'config/keypairs'
+profiles_path: 'config/profiles'
+roles_path: 'config/roles'
+templates_path: 'config/templates'

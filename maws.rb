@@ -20,17 +20,31 @@ def symbolize(*names)
   names.map {|n| n.to_sym}
 end
 
+CONFIG_CONFIG_PATH = 'config/config.yml'
+
+unless File.exists? CONFIG_CONFIG_PATH
+  $stderr.puts "No main config file: #{CONFIG_CONFIG_PATH} found. Quiting!"
+  exit(1)
+end
+
+cc = YAML.load_file(CONFIG_CONFIG_PATH)
+
 BASE_PATH = File.dirname(__FILE__)
-PROFILES_PATH = BASE_PATH + '/config/profiles'
-ROLES_PATH = BASE_PATH + '/config/roles'
+
+
+AWS_KEY_PATH = File.expand_path(cc["aws_key_path"], BASE_PATH)
+KEYPAIRS_PATH = File.expand_path(cc["keypairs_path"], BASE_PATH)
+PROFILES_PATH = File.expand_path(cc["profiles_path"], BASE_PATH)
+ROLES_PATH = File.expand_path(cc["roles_path"], BASE_PATH)
+TEMPLATES_PATH = File.expand_path(cc["templates_path"], BASE_PATH)
+
 COMMANDS_PATH = BASE_PATH + '/lib/commands'
 
-AWS_KEY_FILE = "config/aws.key"
-unless File.exists? AWS_KEY_FILE
-  $stderr.puts "No AWS secret key file: #{AWS_KEY_FILE}"
+unless File.exists? AWS_KEY_PATH
+  $stderr.puts "No AWS secret key file: #{AWS_KEY_PATH}"
   exit
 end
-KEY_ID,SECRET_KEY = *File.read(AWS_KEY_FILE).lines.map {|l| l.chomp}
+KEY_ID,SECRET_KEY = *File.read(AWS_KEY_PATH).lines.map {|l| l.chomp}
 
 cp = CommandParser.new(PROFILES_PATH, ROLES_PATH,COMMANDS_PATH)
 command = cp.parse_and_load_command
