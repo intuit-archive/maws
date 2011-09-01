@@ -75,6 +75,7 @@ end
 #      :aws_groups=>["default"],
 #      :monitoring_state=>"disabled",
 #      :aws_product_codes=>[],
+#      :tags => {"Name" => "bps-test-web-01"}
 #      :ssh_key_name=>"",
 #      :block_device_mappings=>
 #       [{:ebs_status=>"attached",

@@ -51,7 +51,7 @@ class AwsConnection
     return @rds_descriptions if @rds_descriptions
 
     @rds_descriptions = rds.describe_db_instances
-    info "        (RDS #{@rds_descriptions.count} total in the region)\n\n" unless @silent
+    info "        (RDS #{@rds_descriptions.count} total in the region)\n\n" #unless @silent
 
     @rds_descriptions
   end
@@ -79,15 +79,15 @@ class AwsConnection
 
     @name_grouped_descriptions[service_name] = {}
 
-    if service_name == 'ec2'
+    if service_name.to_sym == :ec2
       ec2_descriptions.each do |description|
         @name_grouped_descriptions[service_name][Instance::EC2.description_name(description)] = description
       end
-    elsif service_name == 'rds'
+    elsif service_name.to_sym == :rds
       rds_descriptions.each do |description|
         @name_grouped_descriptions[service_name][Instance::RDS.description_name(description)] = description
       end
-    elsif service_name == 'elb'
+    elsif service_name.to_sym == :elb
       elb_descriptions.each do |description|
         @name_grouped_descriptions[service_name][Instance::ELB.description_name(description)] = description
       end
