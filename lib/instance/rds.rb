@@ -9,8 +9,8 @@ class Instance::RDS < Instance
       # READ REPLICA
       info "creating RDS Read Replica #{name}..."
       source_role_name = @role_config.source_role
+      puts @profile.object_id
       source_instance = @profile.select_first_instance(:defined, source_role_name)
-
       unless source_instance.valid_read_replica_source?
         error "...can't create read replica - source rds #{source_instance.name} is not valid (#{source_instance.status})!"
         return
@@ -47,7 +47,7 @@ class Instance::RDS < Instance
       result = connection.rds.create_db_instance(name, master_username, master_password, create_opts)
     end
 
-    self.aws_description = result
+    sync_from_description(result)
     info "...done (RDS #{name} is being created)\n\n"
   end
 

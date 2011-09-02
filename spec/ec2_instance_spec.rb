@@ -4,14 +4,10 @@ require 'lib/instance'
 
 
 describe 'Instance::EC2' do
-  describe "before syncing" do
-    before do
-      @instance = Instance.new_for_service(:ec2, 'instance1', nil, nil, {}, {}, {})
-    end
+  it "before syncing is not alive" do
+    @instance = Instance.new_for_service(:ec2, 'instance1', nil, nil, {}, {}, {})
 
-    it "is not alive" do
-      @instance.should_not be_alive
-    end
+    @instance.should_not be_alive
   end
 
   describe "after syncing" do
@@ -184,6 +180,14 @@ describe 'Instance::EC2' do
   it "extracts name from AWS description" do
     Instance::EC2.description_name({:tags => {"Name" => "web-1"}}).should == "web-1"
     Instance::EC2.description_name({:aws_instance_id => "i-randomid"}).should == "i-randomid"
+  end
+
+  it "extracts aws_id from AWS description" do
+    Instance::EC2.description_aws_id({:aws_instance_id => "i-randomid"}).should == "i-randomid"
+  end
+
+  it "extracts status from AWS description" do
+    Instance::EC2.description_status({:aws_Ssate => "running"}).should == "running"
   end
 end
 
