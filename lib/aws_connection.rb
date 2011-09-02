@@ -97,6 +97,7 @@ class AwsConnection
   end
 
   def image_id_for_image_name(image_name)
+    return if image_name.nil? || image_name.empty?
     images = @ec2.describe_images(:filters => { 'tag:Name' => image_name})
     if images.empty?
       error "No AMI with name '#{image_name}'"

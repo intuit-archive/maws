@@ -2,14 +2,8 @@ require 'lib/instance'
 
 # for RDS instances name == @aws_id
 class Instance::RDS < Instance
-  def aws_description=(description)
-    @aws_description = description
-    @aws_id = description[:aws_id]
-    @status = description[:status]
-  end
-
   def create
-    return if exists_on_aws?
+    return if alive?
 
     if @role_config.replica
       # READ REPLICA
@@ -58,7 +52,7 @@ class Instance::RDS < Instance
   end
 
   def destroy
-    return unless exists_on_aws?
+    return unless alive?
     stoppable_states = %w(available failed storage-full incompatible-parameters incompatible-restore)
     unless stoppable_states.include? @status
       info "can't destroy RDS #{@aws_id} while it is #{@status}"
@@ -76,11 +70,19 @@ class Instance::RDS < Instance
   end
 
   def valid_read_replica_source?
-    exists_on_aws? && !@role_config.replica
+    alive? && !@role_config.replica
   end
 
   def self.description_name(description)
     description[:aws_id]
+  end
+
+  def self.description_aws_id(description)
+    description[:aws_id]
+  end
+
+  def self.description_status(description)
+    description[:status]
   end
 end
 

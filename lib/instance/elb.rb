@@ -8,8 +8,13 @@ class Instance::ELB < Instance
     @status = 'available' if @aws_id
   end
 
+  def description_updated
+     @aws_id = @aws_description[:aws_instance_id]
+     @status = @aws_description[:aws_state] || NA_STATUS
+   end
+
   def create
-     return if exists_on_aws?
+     return if alive?
      info "creating ELB #{name}..."
 
      listeners = @role_config.listeners.dup || []
@@ -22,7 +27,7 @@ class Instance::ELB < Instance
    end
 
   def destroy
-    return unless exists_on_aws?
+    return unless alive?
     connection.elb.delete_load_balancer(@aws_id)
     info "destroying ELB #{name} "
   end
@@ -54,6 +59,14 @@ class Instance::ELB < Instance
 
   def self.description_name(description)
     description[:load_balancer_name]
+  end
+
+  def self.description_aws_id(description)
+    description[:load_balancer_name]
+  end
+
+  def self.description_status(description)
+    'available' if description[:load_balancer_name]
   end
 end
 

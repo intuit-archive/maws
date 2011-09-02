@@ -2,6 +2,8 @@ class Instance
   attr_accessor :name, :role, :connection, :profile, :options
   attr_reader :aws_id, :aws_description, :status, :role_config, :profile_role_config
 
+  NA_STATUS = 'n/a'
+
   def self.new_for_service(service, *args)
     klass = case service.to_sym
     when :ec2 : Instance::EC2
@@ -26,32 +28,23 @@ class Instance
     @aws_description = {}
   end
 
-  def sync
+  def sync!
     description = @connection.description_for_name(name, @role_config.service)
-    if description
-      self.aws_description = description
-    else
-      @aws_description = {}
-      @aws_id = nil
-      @status = 'n/a'
-    end
+    sync_from_description(description)
   end
 
-  def synced?
-    !@aws_id.nil?
+  def sync_from_description(description)
+    @aws_description = description || {}
+    @aws_id = self.class.description_aws_id(@aws_description)
+    @status = self.class.description_status(@aws_description) || NA_STATUS
   end
 
   def terminated?
     status == 'terminated'
   end
 
-  def exists_on_aws?
-    synced? && !terminated?
-  end
-
-  def aws_description=(description)
-    # description is a hash, see bottom of the file for each instance class for examples
-    rise "not implemented"
+  def alive?
+    @aws_id && !terminated?
   end
 
   def to_s
@@ -68,7 +61,7 @@ class Instance
 
   def has_approximate_status?(status)
     if status == "n/a" or status == "terminated"
-      terminated? || !exists_on_aws?
+      !alive?
     else
       status == @status
     end

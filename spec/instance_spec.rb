@@ -4,9 +4,9 @@ require 'lib/instance'
 
 describe 'Instance' do
   it "creates subclasses for different services" do
-    Instance.new_for_service(:ec2,*[nil]*6).should be_a_kind_of(Instance::EC2)
-    Instance.new_for_service(:rds,*[nil]*6).should be_a_kind_of(Instance::RDS)
-    Instance.new_for_service(:elb,*[nil]*6).should be_a_kind_of(Instance::ELB)
+    Instance.new_for_service(:ec2,'ec2-instance1', nil, nil, {}, {}, {}).should be_a_kind_of(Instance::EC2)
+    Instance.new_for_service(:rds,'rds-instance1', nil, nil, {}, {}, {}).should be_a_kind_of(Instance::RDS)
+    Instance.new_for_service(:elb,'elb-instance1', nil, nil, {}, {}, {}).should be_a_kind_of(Instance::ELB)
   end
 
   it "fails creating subclasses for unknown services" do

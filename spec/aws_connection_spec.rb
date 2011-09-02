@@ -164,6 +164,13 @@ describe 'AwsConnection' do
     @ac.image_id_for_image_name('myfavoriteimage').should == 'ami1'
   end
 
+  it "returns nil when looking up AMI that has no name" do
+    @ac.ec2.should_not_receive(:describe_images)
+
+    @ac.image_id_for_image_name(nil).should be_nil
+    @ac.image_id_for_image_name("").should be_nil
+  end
+
   it "will not return AMI id when names are duplicate" do
     @ac.ec2.should_receive(:describe_images).once.
         with(hash_including(:filters => {'tag:Name' => 'myfavoriteimage'})).

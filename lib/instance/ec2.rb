@@ -3,39 +3,33 @@ require 'lib/instance'
 # for EC2 instances @aws_id is a random id
 # name is a value of 'Name' tag
 class Instance::EC2 < Instance
-  def aws_description=(description)
-    @aws_description = description
-    @aws_id = description[:aws_instance_id]
-    @status = description[:aws_state]
-  end
-
   def create
-    return if exists_on_aws?
+    return if alive?
     info "creating EC2 #{name}..."
     image_id = @role_config.image_id || connection.image_id_for_image_name(@role_config.image_name)
-    next if image_id.nil?
+    return if image_id.nil?
     results = connection.ec2.launch_instances(image_id,
       :availability_zone => @command_options.availability_zone,
       :key_name => @profile_role_config.keypair,
       :min_count => 1,
       :max_count => 1,
       :group_ids => @role_config.security_groups,
-      :user_data => @role_config.user_date,
+      :user_data => @role_config.user_data,
       :instance_type => @role_config.instance_type)
-    self.aws_description = results.first
+    sync_from_description(results.first)
     sleep 1 # wait for instance to be created
     connection.ec2.create_tags(@aws_id, {'Name' => name})
     info "...done (#{name} is '#{aws_id}')\n\n"
   end
 
   def destroy
-    return unless exists_on_aws?
+    return unless alive?
     connection.ec2.terminate_instances(@aws_id)
     info "destroying EC2 #{name} (#{@aws_id})"
   end
 
   def stop
-    return unless exists_on_aws?
+    return unless alive?
     if @status == 'running'
       connection.ec2.stop_instances(@aws_id)
       info "stopping EC2 #{name} (#{@aws_id})"
@@ -43,7 +37,7 @@ class Instance::EC2 < Instance
   end
 
   def start
-    return unless exists_on_aws?
+    return unless alive?
     if @status == 'stopped'
       connection.ec2.start_instances(@aws_id)
       info "starting EC2 #{name} (#{@aws_id})"
@@ -51,7 +45,15 @@ class Instance::EC2 < Instance
   end
 
   def self.description_name(description)
-    description[:tags]["Name"] || description[:aws_instance_id]
+    (description[:tags] && description[:tags]["Name"]) || description[:aws_instance_id]
+  end
+
+  def self.description_aws_id(description)
+    description[:aws_instance_id]
+  end
+
+  def self.description_status(description)
+    description[:aws_state]
   end
 end
 
