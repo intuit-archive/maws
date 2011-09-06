@@ -95,7 +95,7 @@ class Profile
     grouped_instances(instance_set, role_name)
   end
 
-  def build_instance_objects
+  def build_defined_instances
     @all_instances = []
     @defined_instances = []
     @specified_instances = []
@@ -103,7 +103,6 @@ class Profile
     defined_role_names.each do |role_name|
       role_config = @roles_config[role_name]
       profile_role_config = @profile_config[role_name]
-
       profile_role_config.count.times do |i|
         name = "%s-%s-%d" % [self.name,role_name,i+1]
         unless profile_role_config.scope == 'region'

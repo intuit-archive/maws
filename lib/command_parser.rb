@@ -31,7 +31,8 @@ class CommandParser
       load_selected_command
       @command = @command_klass.new(@profile, @roles)
       process_command_options
-      @profile.build_instance_objects
+      @profile.build_defined_instances
+      @profile.select_instances_by_command_options
       verify_profile
       @command.verify_options
     else

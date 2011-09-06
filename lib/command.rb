@@ -1,18 +1,11 @@
 require 'lib/instance'
 
 class Command
-  attr_accessor :options
-  attr_reader :connection
+  attr_accessor :options, :connection
 
   def initialize(profile, roles_config)
     @profile = profile
     @roles_config = roles_config
-  end
-
-  def connection=(connection)
-    @connection = connection
-    @profile.select_instances_by_command_options
-    sync_profile_instances
   end
 
   def run!
@@ -52,7 +45,6 @@ class Command
     info "+-----------------------------------------------------------------+\n\n\n"
   end
 
-  protected
   def sync_profile_instances
     sync_instances = sync_only_specified? ? @profile.specified_instances : @profile.defined_instances
     sync_instances.each do |i|
