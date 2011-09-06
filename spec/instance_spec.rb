@@ -20,7 +20,7 @@ describe 'Instance' do
     command_options = {:a => 4, :b => 4, :c => 4, :d => 4}
 
     instance = Instance.new_for_service(:ec2, 'instance1', nil, nil, role_config, profile_role_config, command_options)
-    instance.aws_description = aws_description
+    instance.sync_from_description(aws_description)
 
     instance.a.should == 1
     instance.b.should == 2

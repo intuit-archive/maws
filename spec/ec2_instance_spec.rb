@@ -187,7 +187,7 @@ describe 'Instance::EC2' do
   end
 
   it "extracts status from AWS description" do
-    Instance::EC2.description_status({:aws_Ssate => "running"}).should == "running"
+    Instance::EC2.description_status({:aws_state => "running"}).should == "running"
   end
 end
 
