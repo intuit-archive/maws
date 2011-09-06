@@ -57,7 +57,7 @@ class Command
     sync_instances = sync_only_specified? ? @profile.specified_instances : @profile.defined_instances
     sync_instances.each do |i|
       i.connection = @connection
-      i.sync
+      i.sync!
     end
   end
 
