@@ -122,6 +122,39 @@ describe 'Instance::ELB' do
 
   end
 
+  describe "for EC2 instances" do
+    before do
+      mock_basic_elb_instance_and_connection
+      @instance.sync_from_description({:load_balancer_name => 'elb1'})
+      @ec2i1 = Instance.new_for_service(:ec2, 'ec2-1', nil, nil, {}, {}, {})
+      @ec2i2 = Instance.new_for_service(:ec2, 'ec2-2', nil, nil, {}, {}, {})
+
+      @ec2i1.sync_from_description({:aws_instance_id => 'i-randomid1', :aws_state => 'running'})
+      @ec2i2.sync_from_description({:aws_instance_id => 'i-randomid2', :aws_state => 'running'})
+    end
+
+
+    it "adds them to ELB" do
+      @instance.connection.elb.should_receive(:register_instances_with_load_balancer).once.
+        with('elb1',['i-randomid1', 'i-randomid2']).and_return(nil)
+
+      @instance.add_instances([@ec2i1, @ec2i2])
+    end
+
+    it "removes them from ELB" do
+      @instance.connection.elb.should_receive(:deregister_instances_with_load_balancer).once.
+        with('elb1',['i-randomid1', 'i-randomid2']).and_return(nil)
+
+      @instance.remove_instances([@ec2i1, @ec2i2])
+    end
+
+    it "lists added instances only if they are defined" do
+      @instance.sync_from_description({:instances => ['i-randomid1', 'i-randomid2']})
+      @profile.stub!(:defined_instances).and_return([@ec2i2])
+
+      @instance.instances.should == [@ec2i2]
+    end
+  end
 
   it "extracts name from AWS description" do
     Instance::ELB.description_name({:load_balancer_name => 'elb-01'}).should == "elb-01"
@@ -153,8 +186,9 @@ def mock_basic_elb_instance_and_connection
 
 
   @profile_role_config = mash({})
+  @profile = mock('profile')
   @command_options = mash({:availability_zone => 'z'})
-  @instance = Instance.new_for_service(:elb, 'elb1', nil, nil, @role_config, @profile_role_config, @command_options)
+  @instance = Instance.new_for_service(:elb, 'elb1', nil, @profile, @role_config, @profile_role_config, @command_options)
 
   @keyid, @key = aws_test_key
   @instance.connection = AwsConnection.new(@keyid, @key, mash({:region => 'us-west-1', :logger => $right_aws_logger}))
