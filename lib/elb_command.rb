@@ -2,8 +2,9 @@ require 'lib/command'
 
 class ElbCommand < Command
   def partition_elbs_and_instances
-    elbs = specified_instances.select{|i| i.is_a? Instance::ELB}
-    instances = specified_instances.select{|i| i.is_a?(Instance::EC2) && i.alive?}
+    instances_to_partition = specified_instances
+    elbs = instances_to_partition.select{|i| i.is_a? Instance::ELB}
+    instances = instances_to_partition.select{|i| i.is_a?(Instance::EC2) && i.alive?}
 
     if elbs.empty?
       no_elb_message
