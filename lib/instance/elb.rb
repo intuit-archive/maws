@@ -2,26 +2,17 @@ require 'lib/instance'
 
 # for ELBs @aws_id is the same as their names
 class Instance::ELB < Instance
-  def aws_description=(description)
-    @aws_description = description
-    @aws_id = description[:load_balancer_name]
-    @status = 'available' if @aws_id
-  end
-
-  def description_updated
-     @aws_id = @aws_description[:aws_instance_id]
-     @status = @aws_description[:aws_state] || NA_STATUS
-   end
-
   def create
      return if alive?
      info "creating ELB #{name}..."
 
      listeners = @role_config.listeners.dup || []
 
-     connection.elb.create_load_balancer(name, @connection.availability_zones, listeners.shift)
+     server = connection.elb.create_load_balancer(name, @connection.availability_zones, listeners)
      connection.elb.configure_health_check(name, @role_config.health_check)
-     connection.elb.create_load_balancer_listeners(name, listeners) unless listeners.empty?
+
+     description = server ? {:load_balancer_name => name} : {}
+     sync_from_description(description)
 
      info "...done (ELB #{name} is ready)\n\n"
    end
