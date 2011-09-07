@@ -50,7 +50,7 @@ class Wait < Command
       been_waiting += 1
       connection.clear_cached_descriptions
       connection.silent = true
-      specified_instances.each {|i| i.sync}
+      specified_instances.each {|i| i.sync!}
     end
   end
 end
