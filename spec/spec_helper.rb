@@ -1,5 +1,13 @@
 require 'hashie'
 
+
+SPEC_PATH = File.dirname(__FILE__)
+# for testing purposes, it's like the whole application lives inside tmp/spec_maws_root/ folder
+SPEC_BASE_PATH = File.expand_path(SPEC_PATH + "/../tmp/spec_maws_root")
+BASE_PATH = SPEC_BASE_PATH
+
+KEYPAIRS_PATH = SPEC_BASE_PATH + "/config/keypairs"
+
 class Hashie::Mash
   # undef :count if defined? :count
 end
