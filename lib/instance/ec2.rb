@@ -10,12 +10,12 @@ class Instance::EC2 < Instance
     return if image_id.nil?
     results = connection.ec2.launch_instances(image_id,
       :availability_zone => @command_options.availability_zone,
-      :key_name => @profile_role_config.keypair,
+      :key_name => config(:keypair),
       :min_count => 1,
       :max_count => 1,
-      :group_ids => @role_config.security_groups,
-      :user_data => @role_config.user_data,
-      :instance_type => @role_config.instance_type)
+      :group_ids => config(:security_groups),
+      :user_data => config(:user_data),
+      :instance_type => config(:instance_type))
     sync_from_description(results.first)
     sleep 1 # wait for instance to be created
     connection.ec2.create_tags(@aws_id, {'Name' => name})
