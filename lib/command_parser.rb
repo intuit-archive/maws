@@ -6,7 +6,7 @@ require 'lib/trollop'
 
 
 class CommandParser
-  attr_reader :available_profiles
+  attr_reader :available_profiles, :available_commands
 
   def initialize(profiles_path, roles_path, commands_path)
     @profiles_path = profiles_path
@@ -40,7 +40,7 @@ class CommandParser
       ARGV.delete_if {|arg| arg != "-h" && arg != "--help"}
       process_generic_help_options
       Trollop::die "no such profile #{@selected_profile_path}" unless File.exists?(@selected_profile_path)
-      Trollop::die "no such command #{@selected_command}" unless File.exists? @selected_command_path
+      Trollop::die "no such command #{@selected_command}" unless File.exists?(@selected_command_path)
     end
 
     @command
