@@ -14,15 +14,38 @@ class Configure < Command
   end
 
   def run!
+    @ssh_actions = {}
+
+    configurable_instances = specified_instances.select do |instance|
+      instance.status == 'running' &&
+      (instance.profile_role_config.configurations || !options.command.empty?)
+    end
+
+    prepare_ssh_actions(configurable_instances)
+    execute_ssh_actions(configurable_instances)
+  end
+
+  def prepare_ssh_actions(instances)
+    instances.each do |instance|
+      @ssh_actions[instance] = []
+      build_ssh_actions_for_instance(instance)
+    end
+  end
+
+  def execute_ssh_actions(instances)
+    # create threads that execute ssh commands
     threads = []
-    specified_instances.each do |instance|
-      next unless instance.status == 'running'
-      next unless instance.profile_role_config.configurations || !options.command.empty?
+    instances.each do |instance|
+      ssh_actions = @ssh_actions[instance]
+      next if ssh_actions.empty?
 
       threads << Thread.new do
         Thread.current[:title] = "#{instance.name} (#{instance.dns_name})"
         Thread.current[:ensured_output] = []
-        process_instance(instance)
+
+        ssh = ssh_connect_to(instance)
+        ssh_actions.each {|action| action.call(ssh)}
+        ssh_disconnect(ssh, instance)
       end
     end
 
@@ -34,13 +57,9 @@ class Configure < Command
     ensure
       print_ensured_output(threads)
     end
-
   end
 
-  def process_instance(instance)
-    ssh = ssh_connect_to(instance)
-
-
+  def build_ssh_actions_for_instance(instance)
     if options.command.empty?
       # execute all configurations
       instance.profile_role_config.configurations.each do |configuration|
@@ -49,12 +68,10 @@ class Configure < Command
     elsif instance.profile_role_config.configurations && instance.profile_role_config.configurations.collect{|c| c.name}.include?(options.command)
       # command specified as name of a config
       configuration = instance.profile_role_config.configurations.find{|c| c.name == options.command}
-      execute_configuration(ssh, instance, configuration)
+      execute_configuration(instance, configuration)
     elsif options.command
-       execute_remote_command(ssh, instance, nil, options.command)
+       execute_remote_command(instance, nil, options.command)
     end
-
-    ssh_disconnect(ssh, instance)
   end
 
   def ssh_connect_to(instance)
@@ -77,27 +94,28 @@ class Configure < Command
     ssh.close
   end
 
-  def execute_configuration(ssh, instance, configuration)
+  def execute_configuration(instance, configuration)
     if configuration.template
-      upload_template(ssh, instance, configuration)
+      upload_template(instance, configuration)
     elsif configuration.command
-      execute_remote_command(ssh, instance, configuration.name, configuration.command)
+      execute_remote_command(instance, configuration.name, configuration.command)
     end
   end
 
-  def execute_remote_command(ssh, instance, name, command)
-    if name
-      ensure_output :info, "   executing #{name} command: " + command
-    else
-      ensure_output :info, "   executing #{command}"
-    end
+  def execute_remote_command(instance, name, command)
+    add_ssh_action(instance) do |ssh|
+      if name
+        ensure_output :info, "   executing #{name} command: " + command
+      else
+        ensure_output :info, "   executing #{command}"
+      end
 
-    result = ssh.exec!(command)
-    ensure_output :info, result if result
+      result = ssh.exec!(command)
+      ensure_output :info, result if result
+    end
   end
 
-  def upload_template(ssh, instance, configuration)
-    info "configuring #{configuration.template} for #{instance.name}"
+  def upload_template(instance, configuration)
     # prepare params for config file interpolation
     resolved_params = {}
     configuration.template_params.each do |param_name, param_config|
@@ -111,18 +129,23 @@ class Configure < Command
 
     Dir.mkdir(TEMPLATE_OUTPUT_DIR) if !File.directory?(TEMPLATE_OUTPUT_DIR)
     config_output_path = File.join(TEMPLATE_OUTPUT_DIR, "#{instance.name}--#{instance.aws_id}." + configuration.template)
-    ensure_output :info, "generated  '#{config_output_path}'"
     File.open(config_output_path, "w") {|f| f.write(generated_config)}
 
-    if options.dump
-      ensure_output :info, "\n\n------- BEGIN #{config_output_path} -------"
-      ensure_output :info, generated_config
-      ensure_output :info, "-------- END #{config_output_path} --------\n\n"
-    end
+    add_ssh_action(instance) do |ssh|
+      ensure_output :info, "configuring #{configuration.template} for #{instance.name}"
+      ensure_output :info, "generated  '#{config_output_path}'"
 
-    ssh.scp.upload!(config_output_path, configuration.location)
-    timestamp = ssh.exec!("stat -c %y #{configuration.location}")
-    ensure_output :info, "            new timestamp for #{configuration.location}: " + timestamp
+      if options.dump
+        ensure_output :info, "\n\n------- BEGIN #{config_output_path} -------"
+        ensure_output :info, generated_config
+        ensure_output :info, "-------- END #{config_output_path} --------\n\n"
+      end
+
+      ssh.scp.upload!(config_output_path, configuration.location)
+
+      timestamp = ssh.exec!("stat -c %y #{configuration.location}")
+      ensure_output :info, "            new timestamp for #{configuration.location}: " + timestamp
+    end
   end
 
   def resolve_template_param(instance, template_name, param_name, param_config)
@@ -152,6 +175,10 @@ class Configure < Command
   end
 
   private
+
+  def add_ssh_action(instance, &block)
+    @ssh_actions[instance] << block
+  end
 
   def print_ensured_output(threads)
     info "\n"

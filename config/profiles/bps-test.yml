@@ -27,14 +27,15 @@ web:
         -
             name: vhosts
             template: 'httpd-vhosts.conf'
-            location: '/usr/local/apache2/conf/httpd-vhosts.conf'
+            # location: '/usr/local/apache2/conf/httpd-vhosts.conf'
+            location: 'test-vhosts.conf'
             template_params:
                 balancer: self
                 balancer_members:
                     select_many:
                         role: app
                         # scope: region
-                        chunk_size: 3
+                        chunk_size: 2
         -
             name: stop
             command: 'service httpd2 stop'
@@ -46,7 +47,7 @@ web:
             command: 'sudo -i ifconfig | grep "inet addr"'
 
 app:
-    count: 3
+    count: 5
     scope: lane
     keypair: jgaigalas_key
     configurations:
