@@ -19,6 +19,12 @@ describe "configure command" do
     parser.should_receive(:opt).once.
       with(:command, "Command to run remotely (either name or a string)", :type => :string, :default => "")
 
+    parser.should_receive(:opt).once.
+      with(:login_name, "The SSH login name", :short => "-l", :type => :string, :default => "root")
+
+    parser.should_receive(:opt).once.
+      with(:identity_file, "The SSH identity file", :short => "-i", :type => :string)
+
     command.add_specific_options(parser)
   end
 
@@ -28,12 +34,11 @@ describe "configure command" do
     i3 = Instance::EC2.new('i3', 'running', nil, empty_config, empty_config, empty_config)
 
     command = Configure.new(nil, nil)
-    command.options = empty_config
     command.options = mock('options', :command => "fakecommand")
-
 
     command.should_receive(:specified_instances).once.and_return([i1,i2])
     command.should_receive(:ssh_connect_to).once.with(i2).and_return(:ssh)
+    command.should_receive(:execute_remote_command).once.with(:ssh, i2, nil, "fakecommand").and_return(nil)
     command.should_receive(:ssh_disconnect).once.with(:ssh, i2).and_return(nil)
 
     command.run!
@@ -76,24 +81,24 @@ describe "configure command" do
     i1.stub!(:dns_name).and_return("i1.amazonaws.com")
     i1.stub!(:keypair).and_return("i1kp")
 
-
     command = Configure.new(nil, nil)
-    command.options = mock('options', :command => "fakecommand")
+    command.options = mock('options', :command => "fakecommand", :login_name => "root", :identity_file => nil)
     command.should_receive(:specified_instances).once.and_return([i1])
 
-    command.stub!(:execute_remote_command).and_return(nil)
+    identity_file = "#{KEYPAIRS_PATH}/i1kp.pem"
+    File.should_receive(:exists?).once.with(identity_file).and_return(true)
 
     ssh = mock('ssh')
     Net::SSH.should_receive(:start).once.
       with('i1.amazonaws.com', 'root',
-            {:keys => [KEYPAIRS_PATH + '/i1kp.pem'],
+            {:keys => [identity_file],
              :verbose => :warn,
-             :auth_methods => 'publickey'}).and_return(ssh)
+             :auth_methods => ['publickey']}).and_return(ssh)
+    ssh.should_receive(:exec!).once.with("fakecommand")
     ssh.should_receive(:close).once
 
     command.run!
   end
-
 
   it "processes a list of configuration steps" do
     c1 = mash({:name => 'c1'})

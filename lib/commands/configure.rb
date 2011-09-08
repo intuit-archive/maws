@@ -9,6 +9,8 @@ class Configure < Command
   def add_specific_options(parser)
     parser.opt :dump, "Dump config files before uploading them", :type => :flag, :default => false
     parser.opt :command, "Command to run remotely (either name or a string)", :type => :string, :default => ""
+    parser.opt :login_name, "The SSH login name", :short => '-l', :type => :string, :default => "root"
+    parser.opt :identity_file, "The SSH identity file", :short => '-i', :type => :string
   end
 
   def run!
@@ -36,22 +38,20 @@ class Configure < Command
   end
 
   def ssh_connect_to(instance)
-    keypair_file = File.join(KEYPAIRS_PATH, instance.keypair + ".pem")
-
     host = instance.dns_name
-    user = "root"
+    user = options.login_name
+
+    identity_file = options.identity_file || File.join(KEYPAIRS_PATH, "#{instance.keypair}.pem")
+    raise ArgumentError.new("Missing identity file: #{identity_file}") if !File.exists?(identity_file)
 
     info "connecting to '#{user}@#{host}'..."
 
-    Net::SSH.start(host, user,
-              :keys => [keypair_file],
-              :verbose => :warn,
-              :auth_methods => 'publickey')
+    Net::SSH.start(host, user, { :keys => [identity_file], :verbose => :warn, :auth_methods => ["publickey"] })
   end
 
   def ssh_disconnect(ssh, instance)
     host = instance.dns_name
-    user = "root"
+    user = options.login_name
 
     puts "...done (disconnected from '#{user}@#{host}')\n\n"
     ssh.close
@@ -89,6 +89,7 @@ class Configure < Command
     template = File.read(template_path)
     generated_config =  Erubis::Eruby.new(template).result(resolved_params)
 
+    Dir.mkdir(TEMPLATE_OUTPUT_DIR) if !File.directory?(TEMPLATE_OUTPUT_DIR)
     config_output_path = File.join(TEMPLATE_OUTPUT_DIR, "#{instance.name}--#{instance.aws_id}." + configuration.template)
     info "generated  '#{config_output_path}'"
     File.open(config_output_path, "w") {|f| f.write(generated_config)}
