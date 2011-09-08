@@ -35,6 +35,7 @@ class Configure < Command
   def execute_ssh_actions(instances)
     # create threads that execute ssh commands
     threads = []
+    ssh_connections = {}
     instances.each do |instance|
       ssh_actions = @ssh_actions[instance]
       next if ssh_actions.empty?
@@ -44,8 +45,12 @@ class Configure < Command
         Thread.current[:ensured_output] = []
 
         ssh = ssh_connect_to(instance)
+        ssh_connections[instance] = ssh
+
         ssh_actions.each {|action| action.call(ssh)}
+
         ssh_disconnect(ssh, instance)
+        ssh_connections[instance] = nil
       end
     end
 
@@ -55,6 +60,9 @@ class Configure < Command
         t.join
       end
     ensure
+      ssh_connections.each do |instance, ssh|
+        ssh_disconnect(ssh, instance) if ssh
+      end
       print_ensured_output(threads)
     end
   end
