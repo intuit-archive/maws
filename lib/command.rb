@@ -36,13 +36,22 @@ class Command
   end
 
   def pretty_describe(title, data)
-    info "++++++++++ " + title + " " + ("+" * (55 - title.length))
+    pretty_describe_heading(title)
     if data.is_a? String
       info data
     else
       ap data
     end
-    info "+-----------------------------------------------------------------+\n\n\n"
+    pretty_describe_footer
+  end
+
+  def pretty_describe_heading(title)
+    title = title[0,62]
+    info "++++++++++ " + title + " " + ("+" * (75 - title.length))
+  end
+
+  def pretty_describe_footer
+    info "+---------------------------------------------------------------------------------------+\n\n\n"
   end
 
   def sync_profile_instances

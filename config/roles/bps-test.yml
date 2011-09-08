@@ -23,10 +23,13 @@ lbweb:
 web:
     service: ec2
     # image_id: 'ami-572eef3e'
-    image_name: 'ami-bps-test-web'
-    instance_type: 'm1.large'
+    # image_name: 'ami-bps-test-web'
+    image_name: 'bps-web-v3'
+    # instance_type: 'm1.large'
+    instance_type: 't1.micro'
     security_groups:
-        - bps-web
+        - default
+        - bps-e2e-web
     user_data: 'abc123'
 
 app:

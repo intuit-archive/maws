@@ -21,9 +21,8 @@ lbweb:
     scope: region
 
 web:
-    count: 2
+    count: 10
     scope: lane
-    keypair: jgaigalas_key
     configurations:
         -
             name: vhosts
@@ -40,8 +39,11 @@ web:
             name: stop
             command: 'service httpd2 stop'
         -
-            namse: start
+            name: start
             command: 'service httpd2 start'
+        -
+            name: ips
+            command: 'sudo -i ifconfig | grep "inet addr"'
 
 app:
     count: 3

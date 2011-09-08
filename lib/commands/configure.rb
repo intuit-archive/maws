@@ -14,27 +14,47 @@ class Configure < Command
   end
 
   def run!
+    threads = []
     specified_instances.each do |instance|
       next unless instance.status == 'running'
       next unless instance.profile_role_config.configurations || !options.command.empty?
-      ssh = ssh_connect_to(instance)
 
-
-      if options.command.empty?
-        # execute all configurations
-        instance.profile_role_config.configurations.each do |configuration|
-          execute_configuration(ssh, instance, configuration)
-        end
-      elsif instance.profile_role_config.configurations && instance.profile_role_config.configurations.collect{|c| c.name}.include?(options.command)
-        # command specified as name of a config
-        configuration = instance.profile_role_config.configurations.find{|c| c.name == options.command}
-        execute_configuration(ssh, instance, configuration)
-      elsif options.command
-         execute_remote_command(ssh, instance, nil, options.command)
+      threads << Thread.new do
+        Thread.current[:title] = "#{instance.name} (#{instance.dns_name})"
+        Thread.current[:ensured_output] = []
+        process_instance(instance)
       end
-
-      ssh_disconnect(ssh, instance)
     end
+
+    begin
+      threads.each do |t|
+        Kernel.sleep 0.03
+        t.join
+      end
+    ensure
+      print_ensured_output(threads)
+    end
+
+  end
+
+  def process_instance(instance)
+    ssh = ssh_connect_to(instance)
+
+
+    if options.command.empty?
+      # execute all configurations
+      instance.profile_role_config.configurations.each do |configuration|
+        execute_configuration(ssh, instance, configuration)
+      end
+    elsif instance.profile_role_config.configurations && instance.profile_role_config.configurations.collect{|c| c.name}.include?(options.command)
+      # command specified as name of a config
+      configuration = instance.profile_role_config.configurations.find{|c| c.name == options.command}
+      execute_configuration(ssh, instance, configuration)
+    elsif options.command
+       execute_remote_command(ssh, instance, nil, options.command)
+    end
+
+    ssh_disconnect(ssh, instance)
   end
 
   def ssh_connect_to(instance)
@@ -53,7 +73,7 @@ class Configure < Command
     host = instance.dns_name
     user = options.login_name
 
-    puts "...done (disconnected from '#{user}@#{host}')\n\n"
+    puts "...done (disconnected from '#{user}@#{host}')"
     ssh.close
   end
 
@@ -67,13 +87,13 @@ class Configure < Command
 
   def execute_remote_command(ssh, instance, name, command)
     if name
-      info "   executing #{name} command: " + command
+      ensure_output :info, "   executing #{name} command: " + command
     else
-      info "   executing #{command}"
+      ensure_output :info, "   executing #{command}"
     end
 
     result = ssh.exec!(command)
-    info result if result
+    ensure_output :info, result if result
   end
 
   def upload_template(ssh, instance, configuration)
@@ -91,18 +111,18 @@ class Configure < Command
 
     Dir.mkdir(TEMPLATE_OUTPUT_DIR) if !File.directory?(TEMPLATE_OUTPUT_DIR)
     config_output_path = File.join(TEMPLATE_OUTPUT_DIR, "#{instance.name}--#{instance.aws_id}." + configuration.template)
-    info "generated  '#{config_output_path}'"
+    ensure_output :info, "generated  '#{config_output_path}'"
     File.open(config_output_path, "w") {|f| f.write(generated_config)}
 
     if options.dump
-      info "\n\n------- BEGIN #{config_output_path} -------"
-      info generated_config
-      info "-------- END #{config_output_path} --------\n\n"
+      ensure_output :info, "\n\n------- BEGIN #{config_output_path} -------"
+      ensure_output :info, generated_config
+      ensure_output :info, "-------- END #{config_output_path} --------\n\n"
     end
 
     ssh.scp.upload!(config_output_path, configuration.location)
     timestamp = ssh.exec!("stat -c %y #{configuration.location}")
-    info "            new timestamp for #{configuration.location}: " + timestamp
+    ensure_output :info, "            new timestamp for #{configuration.location}: " + timestamp
   end
 
   def resolve_template_param(instance, template_name, param_name, param_config)
@@ -129,5 +149,23 @@ class Configure < Command
     else
       param_config
     end
+  end
+
+  private
+
+  def print_ensured_output(threads)
+    info "\n"
+    threads.each do |t|
+      pretty_describe_heading(t[:title])
+      t[:ensured_output].each do |method, message|
+        send(method, message)
+      end
+
+      pretty_describe_footer
+    end
+  end
+
+  def ensure_output method, message
+    Thread.current[:ensured_output] << [method.to_sym, message]
   end
 end
