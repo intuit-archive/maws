@@ -36,10 +36,12 @@ describe "configure command" do
     command = Configure.new(nil, nil)
     command.options = mock('options', :command => "fakecommand")
 
+    ssh1 = mock('ssh-1')
+
     command.should_receive(:specified_instances).once.and_return([i1,i2])
-    command.should_receive(:ssh_connect_to).once.with(i2).and_return(:ssh)
-    command.should_receive(:execute_remote_command).once.with(:ssh, i2, nil, "fakecommand").and_return(nil)
-    command.should_receive(:ssh_disconnect).once.with(:ssh, i2).and_return(nil)
+    command.should_receive(:ssh_connect_to).once.with(i2).and_return(ssh1)
+    ssh1.should_receive(:exec!).once.with("fakecommand")
+    command.should_receive(:ssh_disconnect).once.with(ssh1, i2).and_return(nil)
 
     command.run!
   end
@@ -62,16 +64,17 @@ describe "configure command" do
 
     command = Configure.new(nil, nil)
     command.options = mock('options', :command => "fakecommand")
-    command.stub!(:execute_remote_command).and_return(nil)
 
+    ssh1 = mock("ssh1", :exec! => nil)
+    ssh2 = mock("ssh2", :exec! => nil)
 
     command.should_receive(:specified_instances).once.and_return([i1,i2])
 
-    command.should_receive(:ssh_connect_to).once.with(i1).and_return(:ssh1)
-    command.should_receive(:ssh_connect_to).once.with(i2).and_return(:ssh2)
+    command.should_receive(:ssh_connect_to).once.with(i1).and_return(ssh1)
+    command.should_receive(:ssh_connect_to).once.with(i2).and_return(ssh2)
 
-    command.should_receive(:ssh_disconnect).once.with(:ssh1, i1).and_return(nil)
-    command.should_receive(:ssh_disconnect).once.with(:ssh2, i2).and_return(nil)
+    command.should_receive(:ssh_disconnect).once.with(ssh1, i1).and_return(nil)
+    command.should_receive(:ssh_disconnect).once.with(ssh2, i2).and_return(nil)
 
     command.run!
   end
@@ -101,8 +104,8 @@ describe "configure command" do
   end
 
   it "processes a list of configuration steps" do
-    c1 = mash({:name => 'c1'})
-    c2 = mash({:name => 'c2'})
+    c1 = mash({:name => 'c1', :command => 'ls -l'})
+    c2 = mash({:name => 'c2', :command => 'ls -a'})
     profile_role_config = mash({:configurations => [c1,c2]})
     i1 = Instance::EC2.new('i1', 'running', nil, empty_config, profile_role_config, empty_config)
 
@@ -110,17 +113,19 @@ describe "configure command" do
     command.options = mock('options', :command => "")
     command.should_receive(:specified_instances).once.and_return([i1])
 
-    command.should_receive(:ssh_connect_to).once.with(i1).and_return(:ssh1)
-    command.should_receive(:ssh_disconnect).once.with(:ssh1, i1).and_return(nil)
+    ssh1 = mock('ssh1')
 
-    command.should_receive(:execute_configuration).once.with(:ssh1, i1, c1)
-    command.should_receive(:execute_configuration).once.with(:ssh1, i1, c2)
+    command.should_receive(:ssh_connect_to).once.with(i1).and_return(ssh1)
+    command.should_receive(:ssh_disconnect).once.with(ssh1, i1).and_return(nil)
+
+    ssh1.should_receive(:exec!).once.with('ls -l')
+    ssh1.should_receive(:exec!).once.with('ls -a')
 
     command.run!
   end
 
 
-  it "executes a named remote command" do
+  it "queues a named remote command for execution" do
     c1 = mash({:name => 'c1', :command => 'ls -l'})
     c2 = mash({:name => 'c2', :command => 'ls -a'})
     profile_role_config = mash({:configurations => [c1,c2]})
@@ -130,14 +135,12 @@ describe "configure command" do
     command.options = mock('options', :command => "c2")
     command.should_receive(:specified_instances).once.and_return([i1])
 
-    command.should_receive(:ssh_connect_to).once.with(i1).and_return(:ssh1)
-    command.should_receive(:ssh_disconnect).once.with(:ssh1, i1).and_return(nil)
-    command.should_receive(:execute_remote_command).once.with(:ssh1, i1, 'c2', 'ls -a')
+    command.should_receive(:queue_remote_command).once.with(i1, 'c2', 'ls -a')
 
     command.run!
   end
 
-  it "executes a named template command" do
+  it "queue a template from a named command" do
     template_config = mash({:name => 'database', :template => 'database.yml'})
     profile_role_config = mash({:configurations => [template_config]})
     i1 = Instance::EC2.new('i1', 'running', nil, empty_config, profile_role_config, empty_config)
@@ -146,9 +149,7 @@ describe "configure command" do
     command.options = mock('options', :command => "database")
     command.should_receive(:specified_instances).once.and_return([i1])
 
-    command.should_receive(:ssh_connect_to).once.with(i1).and_return(:ssh1)
-    command.should_receive(:ssh_disconnect).once.with(:ssh1, i1).and_return(nil)
-    command.should_receive(:upload_template).with(:ssh1, i1, template_config).once
+    command.should_receive(:generate_and_queue_upload_template).with(i1, template_config).once
 
     command.run!
   end
@@ -162,9 +163,11 @@ describe "configure command" do
     command.options = mock('options', :command => "ls -a")
     command.should_receive(:specified_instances).once.and_return([i1])
 
-    command.should_receive(:ssh_connect_to).once.with(i1).and_return(:ssh1)
-    command.should_receive(:ssh_disconnect).once.with(:ssh1, i1).and_return(nil)
-    command.should_receive(:execute_remote_command).once.with(:ssh1, i1, nil, 'ls -a')
+    ssh1 = mock('ssh1')
+
+    command.should_receive(:ssh_connect_to).once.with(i1).and_return(ssh1)
+    command.should_receive(:ssh_disconnect).once.with(ssh1, i1).and_return(nil)
+    ssh1.should_receive(:exec!).once.with('ls -a')
 
     command.run!
    end

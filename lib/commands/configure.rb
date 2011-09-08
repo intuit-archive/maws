@@ -63,14 +63,14 @@ class Configure < Command
     if options.command.empty?
       # execute all configurations
       instance.profile_role_config.configurations.each do |configuration|
-        execute_configuration(ssh, instance, configuration)
+        execute_configuration(instance, configuration)
       end
     elsif instance.profile_role_config.configurations && instance.profile_role_config.configurations.collect{|c| c.name}.include?(options.command)
       # command specified as name of a config
       configuration = instance.profile_role_config.configurations.find{|c| c.name == options.command}
       execute_configuration(instance, configuration)
     elsif options.command
-       execute_remote_command(instance, nil, options.command)
+      queue_remote_command(instance, nil, options.command)
     end
   end
 
@@ -90,20 +90,20 @@ class Configure < Command
     host = instance.dns_name
     user = options.login_name
 
-    puts "...done (disconnected from '#{user}@#{host}')"
+    info "...done (disconnected from '#{user}@#{host}')"
     ssh.close
   end
 
   def execute_configuration(instance, configuration)
     if configuration.template
-      upload_template(instance, configuration)
+      generate_and_queue_upload_template(instance, configuration)
     elsif configuration.command
-      execute_remote_command(instance, configuration.name, configuration.command)
+      queue_remote_command(instance, configuration.name, configuration.command)
     end
   end
 
-  def execute_remote_command(instance, name, command)
-    add_ssh_action(instance) do |ssh|
+  def queue_remote_command(instance, name, command)
+    queue_ssh_action(instance) do |ssh|
       if name
         ensure_output :info, "   executing #{name} command: " + command
       else
@@ -115,7 +115,7 @@ class Configure < Command
     end
   end
 
-  def upload_template(instance, configuration)
+  def generate_and_queue_upload_template(instance, configuration)
     # prepare params for config file interpolation
     resolved_params = {}
     configuration.template_params.each do |param_name, param_config|
@@ -131,7 +131,7 @@ class Configure < Command
     config_output_path = File.join(TEMPLATE_OUTPUT_DIR, "#{instance.name}--#{instance.aws_id}." + configuration.template)
     File.open(config_output_path, "w") {|f| f.write(generated_config)}
 
-    add_ssh_action(instance) do |ssh|
+    queue_ssh_action(instance) do |ssh|
       ensure_output :info, "configuring #{configuration.template} for #{instance.name}"
       ensure_output :info, "generated  '#{config_output_path}'"
 
@@ -176,7 +176,7 @@ class Configure < Command
 
   private
 
-  def add_ssh_action(instance, &block)
+  def queue_ssh_action(instance, &block)
     @ssh_actions[instance] << block
   end
 
