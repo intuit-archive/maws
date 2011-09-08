@@ -176,10 +176,11 @@ describe "configure command" do
     pending "generates config file from template"
     pending "uploads config file"
     describe "when resolving parameters" do
-      pending "parsers 'self' paramter"
+      pending "parses 'self' paramter"
       pending "selects all instances that have a specific role with 'select_many' option"
       pending "selects (in round-robin order) chunks of all instances that have a specific role with 'select_many' option"
       pending "selects a single instance (in round-robin order) that has a specific role with 'selec_one' option"
+      pending "parses string parameter"
     end
   end
 

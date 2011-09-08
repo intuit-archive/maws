@@ -138,10 +138,10 @@ class Configure < Command
     Dir.mkdir(TEMPLATE_OUTPUT_DIR) if !File.directory?(TEMPLATE_OUTPUT_DIR)
     config_output_path = File.join(TEMPLATE_OUTPUT_DIR, "#{instance.name}--#{instance.aws_id}." + configuration.template)
     File.open(config_output_path, "w") {|f| f.write(generated_config)}
+    info "generated  '#{config_output_path}'"
 
     queue_ssh_action(instance) do |ssh|
       ensure_output :info, "configuring #{configuration.template} for #{instance.name}"
-      ensure_output :info, "generated  '#{config_output_path}'"
 
       if options.dump
         ensure_output :info, "\n\n------- BEGIN #{config_output_path} -------"
@@ -160,6 +160,9 @@ class Configure < Command
     if param_config == 'self'
       return instance
 
+    elsif param_config.is_a? String
+      return param_config
+
     elsif param_config.select_one.is_a? String
       @profile.select_first_instance(:defined, param_config.select_one)
 
@@ -176,7 +179,6 @@ class Configure < Command
       context = "#{instance.role_name}-#{template_name}-#{param_name}"
       @profile.register_instance_source(context, :defined, param_config.select_many.role, param_config.select_many.chunk_size, param_config.select_many.scope)
       @profile.next_instances_chunk(context)
-
     else
       param_config
     end

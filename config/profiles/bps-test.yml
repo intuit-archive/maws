@@ -21,7 +21,7 @@ lbweb:
     scope: region
 
 web:
-    count: 10
+    count: 1
     scope: lane
     configurations:
         -
