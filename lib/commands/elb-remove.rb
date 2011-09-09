@@ -1,7 +1,7 @@
 require 'lib/command'
 require 'lib/trollop'
 
-class ElbRemove < Command
+aclass ElbRemove < ElbCommand
   def run!
     elbs, instances = partition_elbs_and_instances
     return if elbs.nil? or instances.nil?
