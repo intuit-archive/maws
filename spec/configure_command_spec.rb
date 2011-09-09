@@ -172,6 +172,8 @@ describe "configure command" do
     command.run!
    end
 
+  pending "checks for configurations without names"
+
   describe "for templates" do
     pending "generates config file from template"
     pending "uploads config file"

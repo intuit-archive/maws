@@ -32,6 +32,7 @@ web:
         - bps-e2e-web
     user_data: 'abc123'
 
+
 app:
     service: ec2
     # image_id: 'ami-c763a2ae'

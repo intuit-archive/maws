@@ -44,4 +44,91 @@ describe 'Instance' do
     instance.config(:a, false).should == nil
     lambda {instance.config(:a, true)}.should raise_exception(ArgumentError, "Missing required config: a")
   end
+
+  describe "with remote configurations" do
+    before do
+      Instance.instance_eval {@@configurations_cache = nil}
+
+      @profile_role_config = mash({
+        :configurations => [
+          {:name => 'c1', :command => 'commandP-1'},
+          {:name => 'c2', :command => 'commandP-2'},
+          {:name => 'c3', :command => 'commandP-3'},
+          {:name => 't1',
+                  :location => "locationP-1",
+                  :template_params => {:t1p1 => 'paramP-11', :t1p2 => 'paramP-12'}},
+          {:name => 't2', :template => 'templateP-2.erb',
+                  :template_params => {:t2p2 => 'paramP-22'}}
+          ]
+      })
+
+      @role_config = mash({
+        :name => 'roleX',
+        :configurations => [
+          {:name => 'c1', :command => 'commandR-1'},
+          {:name => 'c4', :command => 'commandR-4'},
+          {:name => 't1', :template => 'templateR-1.erb',
+                  :location => "locationR-1",
+                  :template_params => {:t1p2 => 'paramR-12'}},
+          {:name => 't2', :template => 'templateR-2.erb',
+                  :location => 'locationR-2',
+                  :template_params => {:t2p1 => 'paramR-21'}}
+          ]
+      })
+    end
+
+
+    it "looks up remote configurations from role definition" do
+      @role_config.name = "role1"
+      instance = Instance.new_for_service(:ec2, 'instance1', nil, nil, @role_config, mash({}), mash({}))
+
+      instance.configurations.count.should == 4
+
+      instance.configurations[0].should == @role_config.configurations[0]
+      instance.configurations[1].should == @role_config.configurations[1]
+      instance.configurations[2].should == @role_config.configurations[2]
+      instance.configurations[3].should == @role_config.configurations[3]
+    end
+
+    it "looks up remote configurations from profile definition" do
+      instance = Instance.new_for_service(:ec2, 'instance1', nil, nil, mash({}), @profile_role_config, mash({}))
+
+      instance.configurations.count.should == 5
+
+      instance.configurations[0].should == @profile_role_config.configurations[0]
+      instance.configurations[1].should == @profile_role_config.configurations[1]
+      instance.configurations[2].should == @profile_role_config.configurations[2]
+      instance.configurations[3].should == @profile_role_config.configurations[3]
+      instance.configurations[3].should == @profile_role_config.configurations[3]
+    end
+
+    it "caches configurations for role" do
+      instance1 = Instance.new_for_service(:ec2, 'instance1', nil, nil, @role_config, mash({}), mash({}))
+      instance2 = Instance.new_for_service(:ec2, 'instance1', nil, nil, @role_config, mash({}), mash({}))
+
+
+      instance1.configurations.count.should == 4
+
+      instance2.should_not_receive(:merge_configurations)
+      instance2.configurations.count.should == 4
+    end
+
+    it "merges remote configurations from profile and role definitions (profile overrides role)" do
+      instance = Instance.new_for_service(:ec2, 'instance1', nil, nil, @role_config, @profile_role_config, mash({}))
+
+      instance.configurations.count.should == 6
+
+      instance.configurations[0].should == @profile_role_config.configurations[0]
+      instance.configurations[1].should == @role_config.configurations[1]
+
+      instance.configurations[2].should == mash({:name => 't1', :template => 'templateR-1.erb',
+                            :location => "locationP-1", :template_params => {:t1p1 => 'paramP-11', :t1p2 => 'paramP-12'}})
+
+      instance.configurations[3].should == mash({:name => 't2', :template => 'templateP-2.erb',
+                            :location => 'locationR-2', :template_params => {:t2p1 => 'paramR-21', :t2p2 => 'paramP-22'}})
+
+      instance.configurations[4].should == @profile_role_config.configurations[1]
+      instance.configurations[5].should == @profile_role_config.configurations[2]
+    end
+  end
 end

@@ -81,6 +81,33 @@ class Instance
 
     @profile_role_config[key] || @role_config[key]
   end
+
+  def configurations
+    @@configurations_cache ||= {}
+    @@configurations_cache[self.role_name] ||= merge_configurations(profile_role_config.configurations, role_config.configurations)
+  end
+
+  protected
+  def merge_configurations(profile_configurations, role_configurations)
+    profile_configurations ||= []
+    role_configurations ||= []
+
+    amended_role_configurations = role_configurations.map do |base_configuration|
+      overriden_configuration = configuration_with_name(base_configuration.name, profile_configurations) || {}
+      base_configuration.deep_merge(overriden_configuration)
+    end
+
+    new_profile_configurations = profile_configurations.select do |profile_configuration|
+      # this configuration is not defined in the role
+      configuration_with_name(profile_configuration.name, role_configurations).nil?
+    end
+
+    amended_role_configurations | new_profile_configurations
+  end
+
+  def configuration_with_name(name, configurations)
+    configurations.find {|c| c.name == name}
+  end
 end
 
 require 'lib/instance/ec2'
@@ -88,10 +115,5 @@ require 'lib/instance/rds'
 require 'lib/instance/elb'
 
 
-# build all
-# build non-existing
-# check version by hash ?
-# object for each instance?
-# objects start, stop, sync themselves?
-# tool knows no state
-# establish state
+
+

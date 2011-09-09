@@ -35,6 +35,7 @@ class CommandParser
       @profile.select_instances_by_command_options
       verify_profile
       @command.verify_options
+      @command.verify_configs
     else
       # print usage information and an error message
       ARGV.delete_if {|arg| arg != "-h" && arg != "--help"}

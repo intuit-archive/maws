@@ -18,7 +18,7 @@ class Configure < Command
 
     configurable_instances = specified_instances.select do |instance|
       instance.status == 'running' &&
-      (instance.profile_role_config.configurations || !options.command.empty?)
+      (instance.configurations || !options.command.empty?)
     end
 
     prepare_ssh_actions(configurable_instances)
@@ -70,12 +70,12 @@ class Configure < Command
   def build_ssh_actions_for_instance(instance)
     if options.command.empty?
       # execute all configurations
-      instance.profile_role_config.configurations.each do |configuration|
+      instance.configurations.each do |configuration|
         execute_configuration(instance, configuration)
       end
-    elsif instance.profile_role_config.configurations && instance.profile_role_config.configurations.collect{|c| c.name}.include?(options.command)
+    elsif instance.configurations && instance.configurations.collect{|c| c.name}.include?(options.command)
       # command specified as name of a config
-      configuration = instance.profile_role_config.configurations.find{|c| c.name == options.command}
+      configuration = instance.configurations.find{|c| c.name == options.command}
       execute_configuration(instance, configuration)
     elsif options.command
       queue_remote_command(instance, nil, options.command)
@@ -184,7 +184,28 @@ class Configure < Command
     end
   end
 
+  def verify_configs
+    @roles_config.each do |name, config|
+      verify_config(name, config, "role definition")
+    end
+
+    @profile.profile_config.each do |name, config|
+      verify_config(name, config, "profile role")
+    end
+  end
+
   private
+
+  def verify_config(name, config, scope = '')
+    return unless config.respond_to? :configurations
+
+    Trollop::die "empty or non-array configurations for #{scope} '#{name}'" unless config.configurations.respond_to? :each
+
+    config.configurations.each do |configuration|
+      Trollop::die "nil configuration for #{scope} '#{name}'" unless configuration
+      Trollop::die "nameless configuration [#{configuration.to_hash.inspect}] for #{scope} '#{name}'" if configuration.name.to_s.empty?
+    end
+  end
 
   def queue_ssh_action(instance, &block)
     @ssh_actions[instance] << block

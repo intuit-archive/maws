@@ -27,6 +27,9 @@ class Command
   def verify_options
   end
 
+  def verify_configs
+  end
+
   def sync_only_specified?
     false
   end
