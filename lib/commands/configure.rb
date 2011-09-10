@@ -107,6 +107,11 @@ class Configure < Command
       generate_and_queue_upload_template(instance, configuration)
     elsif configuration.command
       queue_remote_command(instance, configuration.name, configuration.command)
+    elsif configuration.command_set
+      configuration.command_set.to_a.each do |command_name|
+        specified_configuration = instance.configurations.find{|c| c.name == command_name}
+        execute_configuration(instance, specified_configuration) if specified_configuration
+      end
     end
   end
 

@@ -23,6 +23,7 @@ lbweb:
 web:
     count: 1
     scope: lane
+
     configurations:
         -
             name: vhosts
@@ -45,6 +46,11 @@ web:
         -
             name: ips
             command: 'sudo -i ifconfig | grep "inet addr"'
+        -
+            name: all
+            command_set:
+                - ips
+                - start
 
 app:
     count: 5
