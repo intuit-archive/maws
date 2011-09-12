@@ -12,6 +12,7 @@ class Wait < Command
   end
 
   def verify_options
+    super
     state = options.state
     Trollop::die "Can't wait for blank state" if state.nil? || state.empty?
   end

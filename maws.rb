@@ -46,8 +46,8 @@ unless File.exists? AWS_KEY_PATH
 end
 KEY_ID,SECRET_KEY = *File.read(AWS_KEY_PATH).lines.map {|l| l.chomp}
 
-cp = CommandParser.new(PROFILES_PATH, ROLES_PATH,COMMANDS_PATH)
-command = cp.parse_and_load_command
+cp = CommandParser.new(PROFILES_PATH, ROLES_PATH,COMMANDS_PATH, cc["default_region"], cc["default_zone"])
+command = cp.parse_and_load_command()
 command.connection = AwsConnection.new(KEY_ID, SECRET_KEY, command.options)
 command.sync_profile_instances
 command.run!

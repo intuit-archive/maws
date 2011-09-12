@@ -8,10 +8,13 @@ require 'lib/trollop'
 class CommandParser
   attr_reader :available_profiles, :available_commands
 
-  def initialize(profiles_path, roles_path, commands_path)
+  def initialize(profiles_path, roles_path, commands_path, default_region, default_zone)
     @profiles_path = profiles_path
     @roles_path = roles_path
     @commands_path = commands_path
+
+    @default_region = default_region
+    @default_zone = default_zone
 
     @available_profiles = Dir.glob(@profiles_path + '/*.yml').collect {|p| File.basename(p,'.yml')}
     @available_commands = Dir.glob(@commands_path + '/*.rb').collect {|p| File.basename(p,'.rb')}
@@ -31,10 +34,11 @@ class CommandParser
       load_selected_command
       @command = @command_klass.new(@profile, @roles)
       process_command_options
+      @command.verify_options
+
       @profile.build_defined_instances
       @profile.select_instances_by_command_options
       verify_profile
-      @command.verify_options
       @command.verify_configs
     else
       # print usage information and an error message
@@ -118,12 +122,15 @@ class CommandParser
     banner_text = usage(@selected_profile, @selected_command)
     banner_text << "options:\n"
     command = @command
+    command.default_region = @default_region
+    command.default_zone = @default_zone
     command_opts = Trollop::options do
       banner banner_text
       command.add_generic_options(self)
       command.add_specific_options(self)
     end
-    command_opts[:availability_zone] = command_opts[:region] + command_opts[:zone]
+
+    command_opts[:availability_zone] = command_opts[:region].to_s + command_opts[:zone].to_s
     if command_opts[:names].nil? && command_opts[:roles].nil?
       command_opts[:all] = true
     end

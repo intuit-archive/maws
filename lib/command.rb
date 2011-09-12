@@ -1,7 +1,7 @@
 require 'lib/instance'
 
 class Command
-  attr_accessor :options, :connection
+  attr_accessor :options, :connection, :default_region, :default_zone
 
   def initialize(profile, roles_config)
     @profile = profile
@@ -17,14 +17,21 @@ class Command
     parser.opt :roles, "List of roles (available: #{available_roles})", :type => :strings
     parser.opt :names, "Names of machines", :type => :strings
     parser.opt :all, "All roles", :short => '-A', :type => :flag
-    parser.opt :region, "Region", :short => '-R', :default => 'us-east-1'
-    parser.opt :zone, "Zone", :short => '-Z', :default => 'b'
+    parser.opt :region, "Region", :short => '-R', :type => :string, :default => @default_region
+    parser.opt :zone, "Zone", :short => '-Z', :type => :string, :default => @default_zone
   end
 
   def add_specific_options(parser)
   end
 
   def verify_options
+    unless options.region && !options.region.empty?
+      Trollop::die "Region must be specified in command line options OR as 'default_region' in #{CONFIG_CONFIG_PATH}"
+    end
+
+    unless options.zone && !options.zone.empty?
+      Trollop::die "Zone must be specified in command line options OR as 'default_zone' in #{CONFIG_CONFIG_PATH}"
+    end
   end
 
   def verify_configs

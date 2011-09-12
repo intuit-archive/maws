@@ -5,13 +5,15 @@ require 'lib/command'
 describe "Command" do
   it "defines generic command line options" do
     command = Command.new(nil, {'role1' => {}, 'role2' => {}})
+    command.default_region = 'us-east-1'
+    command.default_zone = 'b'
     parser = mock('command line parser')
 
     parser.should_receive(:opt).once.with(:roles, "List of roles (available: role1, role2)", :type => :strings)
     parser.should_receive(:opt).once.with(:names, "Names of machines", :type => :strings)
     parser.should_receive(:opt).once.with(:all, "All roles", :short => '-A', :type => :flag)
-    parser.should_receive(:opt).once.with(:region, "Region", :short => '-R', :default => 'us-east-1')
-    parser.should_receive(:opt).once.with(:zone, "Zone", :short => '-Z', :default => 'b')
+    parser.should_receive(:opt).once.with(:region, "Region", :type=> :string, :short => '-R', :default => 'us-east-1')
+    parser.should_receive(:opt).once.with(:zone, "Zone", :type=> :string, :short => '-Z', :default => 'b')
 
     command.add_generic_options(parser)
   end
