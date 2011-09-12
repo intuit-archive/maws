@@ -121,8 +121,13 @@ class Profile
   end
 
   def instances_for_role(name)
-    @role_grouped_instances ||= @defined_instances.group_by {|i| i.role.name}
+    @role_grouped_instances ||= @defined_instances.group_by {|i| i.role_name}
     @role_grouped_instances[name]
+  end
+
+  def specified_instances_for_role(name)
+    @role_grouped_specified_instances ||= @specified_instances.group_by {|i| i.role_name}
+    @role_grouped_specified_instances[name]
   end
 
   def name

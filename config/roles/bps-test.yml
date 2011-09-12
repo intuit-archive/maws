@@ -36,10 +36,11 @@ web:
 app:
     service: ec2
     # image_id: 'ami-c763a2ae'
-    image_name: 'ami-bps-test-app'
+    # image_name: 'ami-bps-test-app'
+    image_name: 'bps-app-v4'
     instance_type: 'c1.xlarge'
     security_groups:
-        - bps-app
+        - bps-e2e-app
     user_data: 'APPDATA'
 
 masterdb:

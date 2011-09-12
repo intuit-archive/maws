@@ -87,6 +87,10 @@ class Instance
     @@configurations_cache[self.role_name] ||= merge_configurations(profile_role_config.configurations, role_config.configurations)
   end
 
+  def display_fields
+    [:name, :status]
+  end
+
   protected
   def merge_configurations(profile_configurations, role_configurations)
     profile_configurations ||= []

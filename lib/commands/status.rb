@@ -9,30 +9,33 @@ class Status < Command
 
   def run!
     if specified_instances.empty?
-      puts table(table_header, Array.new(table_header.size, ""))
-    else
-      puts table(table_header, *specified_instances.map { |instance| instance_to_table_row(instance) })
+      info "NO INSTANCES SPECIFIED"
+      return
+    end
+
+    @profile.defined_role_names.sort.each do |role_name|
+      instances = @profile.specified_instances_for_role(role_name)
+      next if instances.nil? || instances.empty?
+
+      fields = instances.first.display_fields
+      headers = fields.map {|f| f.to_s.upcase.gsub('_', ' ')}
+
+      info "\n\n**** " + role_name.upcase + " *****************"
+      info table(headers, *instances.map { |instance| instance_to_table_row(instance) })
     end
   end
 
-  def table_header
-    ["NAME", "STATUS", "SERVER", "KEYPAIR"]
-  end
 
   def instance_to_table_row(instance)
-    name = instance.name
-    status =  display_status(instance.status)
-    dns_name = if instance.dns_name
-      if instance.is_a? Instance::EC2
-        "root@" + instance.dns_name
-      else
-        instance.dns_name
-      end
-    else
-      ""
-    end
+    fields = instance.display_fields
 
-    [name.to_s, status, dns_name, instance.keypair.to_s]
+    fields.collect do |field|
+      value = instance.send(field)
+      if field == :status
+        value = display_status(value)
+      end
+      value.to_s
+    end
   end
 
   def display_status(status)

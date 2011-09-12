@@ -59,6 +59,18 @@ class Instance::ELB < Instance
   def self.description_status(description)
     'available' if description[:load_balancer_name]
   end
+
+  def display_fields
+    [:name, :status, :first_listener_info]
+  end
+
+  def first_listener_info
+    return "" unless alive?
+    (aws_description[:listeners] || [{}]).first.to_hash.collect do |key, val|
+      "#{key}=#{val}"
+    end.join("; ")
+  end
+
 end
 
 # example elb description

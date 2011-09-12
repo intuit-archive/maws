@@ -84,6 +84,11 @@ class Instance::RDS < Instance
   def self.description_status(description)
     description[:status]
   end
+
+  def display_fields
+    [:name, :status, :endpoint_address, :endpoint_port]
+  end
+
 end
 
 # example rds description

@@ -55,6 +55,10 @@ class Instance::EC2 < Instance
   def self.description_status(description)
     description[:aws_state]
   end
+
+  def display_fields
+    [:name, :status, :dns_name, :aws_instance_id, :aws_image_id]
+  end
 end
 
 # example ec2 description
