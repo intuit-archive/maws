@@ -68,16 +68,11 @@ class Configure < Command
   end
 
   def build_ssh_actions_for_instance(instance)
-    if options.command.empty?
-      # execute all configurations
-      instance.configurations.each do |configuration|
-        execute_configuration(instance, configuration)
-      end
-    elsif instance.configurations && instance.configurations.collect{|c| c.name}.include?(options.command)
+    if instance.configurations && instance.configurations.collect{|c| c.name}.include?(options.command)
       # command specified as name of a config
       configuration = instance.configurations.find{|c| c.name == options.command}
       execute_configuration(instance, configuration)
-    elsif options.command
+    elsif options.command && !options.command.empty?
       queue_remote_command(instance, nil, options.command)
     end
   end

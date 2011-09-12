@@ -5,6 +5,10 @@ require 'lib/commands/configure'
 
 
 describe "configure command" do
+  before do
+    Instance.instance_eval {@@configurations_cache = nil}
+  end
+
   it "defines template temporary output path" do
     Configure::TEMPLATE_OUTPUT_DIR.should == File.expand_path(SPEC_BASE_PATH + "/tmp")
   end
@@ -34,7 +38,7 @@ describe "configure command" do
     i3 = Instance::EC2.new('i3', 'running', nil, empty_config, empty_config, empty_config)
 
     command = Configure.new(nil, nil)
-    command.options = mock('options', :command => "fakecommand")
+    command.options = mash({:command => "fakecommand"})
 
     ssh1 = mock('ssh-1')
 
@@ -50,7 +54,7 @@ describe "configure command" do
     i1 = Instance::EC2.new('i1', 'running', nil, empty_config, empty_config, empty_config)
 
     command = Configure.new(nil, nil)
-    command.options = mock('options', :command => "")
+    command.options = mash({:command => ""})
 
     command.should_receive(:specified_instances).once.and_return([i1])
     command.should_not_receive(:ssh_connect_to)
@@ -63,7 +67,7 @@ describe "configure command" do
     i2 = Instance::EC2.new('i2', 'running', nil, empty_config, empty_config, empty_config)
 
     command = Configure.new(nil, nil)
-    command.options = mock('options', :command => "fakecommand")
+    command.options = mash({ :command => "fakecommand"})
 
     ssh1 = mock("ssh1", :exec! => nil)
     ssh2 = mock("ssh2", :exec! => nil)
@@ -84,12 +88,13 @@ describe "configure command" do
     i1.stub!(:dns_name).and_return("i1.amazonaws.com")
     i1.stub!(:keypair).and_return("i1kp")
 
-    command = Configure.new(nil, nil)
-    command.options = mock('options', :command => "fakecommand", :login_name => "root", :identity_file => nil)
-    command.should_receive(:specified_instances).once.and_return([i1])
-
     identity_file = "#{KEYPAIRS_PATH}/i1kp.pem"
     File.should_receive(:exists?).once.with(identity_file).and_return(true)
+
+    command = Configure.new(nil, nil)
+    command.options = mash({ :command => "fakecommand", :login_name => "root", :identity_file => identity_file})
+    command.should_receive(:specified_instances).once.and_return([i1])
+
 
     ssh = mock('ssh')
     Net::SSH.should_receive(:start).once.
@@ -103,27 +108,24 @@ describe "configure command" do
     command.run!
   end
 
-  it "processes a list of configuration steps" do
+  it "does nothing if command is not specified" do
     c1 = mash({:name => 'c1', :command => 'ls -l'})
     c2 = mash({:name => 'c2', :command => 'ls -a'})
     profile_role_config = mash({:configurations => [c1,c2]})
     i1 = Instance::EC2.new('i1', 'running', nil, empty_config, profile_role_config, empty_config)
 
     command = Configure.new(nil, nil)
-    command.options = mock('options', :command => "")
+    command.options = mash({:command => ""})
     command.should_receive(:specified_instances).once.and_return([i1])
 
     ssh1 = mock('ssh1')
 
-    command.should_receive(:ssh_connect_to).once.with(i1).and_return(ssh1)
-    command.should_receive(:ssh_disconnect).once.with(ssh1, i1).and_return(nil)
+    command.should_not_receive(:ssh_connect_to)
 
-    ssh1.should_receive(:exec!).once.with('ls -l')
-    ssh1.should_receive(:exec!).once.with('ls -a')
+    ssh1.should_not_receive(:exec!)
 
     command.run!
   end
-
 
   it "queues a named remote command for execution" do
     c1 = mash({:name => 'c1', :command => 'ls -l'})
@@ -132,7 +134,7 @@ describe "configure command" do
     i1 = Instance::EC2.new('i1', 'running', nil, empty_config, profile_role_config, empty_config)
 
     command = Configure.new(nil, nil)
-    command.options = mock('options', :command => "c2")
+    command.options = mash({:command => "c2"})
     command.should_receive(:specified_instances).once.and_return([i1])
 
     command.should_receive(:queue_remote_command).once.with(i1, 'c2', 'ls -a')
@@ -146,10 +148,28 @@ describe "configure command" do
     i1 = Instance::EC2.new('i1', 'running', nil, empty_config, profile_role_config, empty_config)
 
     command = Configure.new(nil, nil)
-    command.options = mock('options', :command => "database")
+    command.options = mash({:command => "database"})
     command.should_receive(:specified_instances).once.and_return([i1])
 
     command.should_receive(:generate_and_queue_upload_template).with(i1, template_config).once
+
+    command.run!
+  end
+
+  it "queues a list of commands in command set for execution" do
+    c1 = mash({:name => 'c1', :command => 'ls -l'})
+    c2 = mash({:name => 'c2', :command => 'ls -a'})
+    cs = mash({:name => 'cs', :command_set => %w(c1 c2)})
+
+    profile_role_config = mash({:configurations => [c1,c2,cs]})
+    i1 = Instance::EC2.new('i1', 'running', nil, empty_config, profile_role_config, empty_config)
+
+    command = Configure.new(nil, nil)
+    command.options = mash({:command => "cs"})
+    command.should_receive(:specified_instances).once.and_return([i1])
+
+    command.should_receive(:queue_remote_command).once.with(i1, 'c1', 'ls -l')
+    command.should_receive(:queue_remote_command).once.with(i1, 'c2', 'ls -a')
 
     command.run!
   end
@@ -160,7 +180,7 @@ describe "configure command" do
     i1 = Instance::EC2.new('i1', 'running', nil, empty_config, profile_role_config, empty_config)
 
     command = Configure.new(nil, nil)
-    command.options = mock('options', :command => "ls -a")
+    command.options = mash({:command => "ls -a"})
     command.should_receive(:specified_instances).once.and_return([i1])
 
     ssh1 = mock('ssh1')
