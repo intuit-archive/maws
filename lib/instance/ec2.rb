@@ -1,4 +1,5 @@
 require 'lib/instance'
+require 'net/ssh'
 
 # for EC2 instances @aws_id is a random id
 # name is a value of 'Name' tag
@@ -41,6 +42,18 @@ class Instance::EC2 < Instance
     if @status == 'stopped'
       connection.ec2.start_instances(@aws_id)
       info "starting EC2 #{name} (#{@aws_id})"
+    end
+  end
+
+  def ssh_available?
+    return false unless alive? && self.dns_name && !self.dns_name.empty?
+
+    begin
+      ssh = Net::SSH.start(dns_name, "phoneyuser", {:auth_methods => ["publickey"], :timeout => 1 })
+    rescue Net::SSH::AuthenticationFailed
+      return true
+    rescue Object
+      return false
     end
   end
 

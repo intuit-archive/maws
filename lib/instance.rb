@@ -62,6 +62,10 @@ class Instance
   def has_approximate_status?(status)
     if status == "n/a" or status == "terminated"
       !alive?
+    elsif status == "ssh"
+      self.respond_to?(:ssh_available?) ? self.ssh_available? : has_approximate_status?("available")
+    elsif status == "running" || status == "available"
+      @status == "running" || @status == "available"
     else
       status == @status
     end
