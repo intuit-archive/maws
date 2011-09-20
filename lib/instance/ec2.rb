@@ -17,10 +17,18 @@ class Instance::EC2 < Instance
       :group_ids => config(:security_groups),
       :user_data => config(:user_data),
       :instance_type => config(:instance_type))
+
     sync_from_description(results.first)
-    sleep 1 # wait for instance to be created
+  end
+
+  def create_tags
     connection.ec2.create_tags(@aws_id, {'Name' => name})
-    info "...done (#{name} is '#{aws_id}')\n\n"
+    sleep 1
+    sync!
+
+    volumes.each {|vid| connection.ec2.create_tags(vid, {'Name' => name})  }
+
+    info "...done (#{name} is '#{aws_id}')"
   end
 
   def destroy
@@ -55,6 +63,17 @@ class Instance::EC2 < Instance
     rescue Object
       return false
     end
+  end
+
+  def volumes
+    return unless @aws_description[:block_device_mappings]
+    @aws_description[:block_device_mappings].map {|dm| dm[:ebs_volume_id]}
+  end
+
+  def attached_volumes
+    return unless @aws_description[:block_device_mappings]
+
+    @aws_description[:block_device_mappings].find_all {|dm| dm[:ebs_status] == "attached"}.map {|dm| dm[:ebs_volume_id]}
   end
 
   def self.description_name(description)
@@ -108,3 +127,4 @@ end
 #         :device_name=>"/dev/sdk",
 #         :ebs_volume_id=>"vol-f900f990"}],
 #      :aws_instance_id=>"i-8ce84ae4"}
+

@@ -143,6 +143,10 @@ class Profile
     @profile_config.keys - RESERVED_ROLE_NAMES
   end
 
+  def specified_role_names
+    @specified_role_names ||= @specified_instances.map {|i| i.role_name}.uniq.sort
+  end
+
   def select_instances_by_command_options
     @specified_instances = if @command_options.all
       @defined_instances

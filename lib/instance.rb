@@ -9,6 +9,8 @@ class Instance
     when :ec2 : Instance::EC2
     when :rds : Instance::RDS
     when :elb : Instance::ELB
+    when :ebs : Instance::EBS
+
     else raise ArgumentError, "No such service: #{service}"
     end
 
@@ -52,7 +54,7 @@ class Instance
   end
 
   def inspect
-    "<Instance #{to_s}>"
+    "<#{self.class} #{to_s}>"
   end
 
   def role_name
@@ -95,6 +97,39 @@ class Instance
     [:name, :status]
   end
 
+  def display_fields_headers
+    display_fields.map {|f| f.to_s.upcase.gsub('_', ' ')}
+  end
+
+  def display_fields_values
+    display_fields.collect do |field|
+      value = display_field_value(field, send(field))
+    end
+  end
+
+  def blank_display_fields_values
+    display_fields.map { "" }
+  end
+
+  def display_field_value(field, value)
+    if field.to_sym == :status
+      display_status(value)
+    else
+      value.to_s
+    end
+  end
+
+  def display_status(status)
+    case status
+    when 'unknown' : '?'
+    when 'non-existant' : 'n/a'
+    when 'terminated' : 'n/a (terminated)'
+    else status.to_s
+    end
+  end
+
+
+
   protected
   def merge_configurations(profile_configurations, role_configurations)
     profile_configurations ||= []
@@ -121,6 +156,7 @@ end
 require 'lib/instance/ec2'
 require 'lib/instance/rds'
 require 'lib/instance/elb'
+require 'lib/instance/ebs'
 
 
 

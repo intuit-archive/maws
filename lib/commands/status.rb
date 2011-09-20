@@ -17,37 +17,14 @@ class Status < Command
       instances = @profile.specified_instances_for_role(role_name)
       next if instances.nil? || instances.empty?
 
-      fields = instances.first.display_fields
-      headers = fields.map {|f| f.to_s.upcase.gsub('_', ' ')}
-
+      headers = instances.first.display_fields_headers
       info "\n\n**** " + role_name.upcase + " *****************"
-      info table(headers, *instances.map { |instance| instance_to_table_row(instance) })
+      info table(headers, *instances.map { |instance| instance.display_fields_values })
     end
+
   end
 
-
-  def instance_to_table_row(instance)
-    fields = instance.display_fields
-
-    fields.collect do |field|
-      value = instance.send(field)
-      if field == :status
-        value = display_status(value)
-      end
-      value.to_s
-    end
-  end
-
-  def display_status(status)
-    case status
-    when 'unknown' : '?'
-    when 'non-existant' : 'n/a'
-    when 'terminated' : 'n/a (terminated)'
-    else status
-    end
-  end
-
-  def sync_only_specified?
-    true
+  def default_sync_instances
+    @profile.specified_instances
   end
 end

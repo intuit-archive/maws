@@ -81,7 +81,6 @@ describe 'Instance::EC2' do
       @role_config.image_name = 'my-favorite-image'
       @instance.connection.should_receive(:image_id_for_image_name).with('my-favorite-image').once.and_return('ami-randomid02')
       @instance.connection.ec2.should_receive(:launch_instances).once.with('ami-randomid02', anything()).and_return([{}])
-      @instance.connection.ec2.should_receive(:create_tags).once.and_return(nil)
 
       @instance.create
     end
@@ -97,27 +96,53 @@ describe 'Instance::EC2' do
           :instance_type => 'tiny.instance'
         }).once.and_return([{}])
 
-      @instance.connection.ec2.should_receive(:create_tags).once.and_return(nil)
       @instance.create
     end
 
     it "sets aws_id from launch_instances results" do
       @instance.connection.ec2.should_receive(:launch_instances).once.
         and_return([{:aws_instance_id => 'i-randomid1'}])
-      @instance.connection.ec2.should_receive(:create_tags).once.and_return(nil)
       @instance.create
 
       @instance.aws_id.should == 'i-randomid1'
     end
 
+  end
+
+  describe "when creating tags" do
+    before do
+      mock_basic_ec2_instance_and_connection
+      @instance.sync_from_description({:aws_instance_id => 'i-randomid2'})
+    end
+
     it "creates name tag" do
-      @instance.connection.ec2.should_receive(:launch_instances).once.
-        and_return([{:aws_instance_id => 'i-randomid1'}])
+      @instance.connection.ec2.should_not_receive(:launch_instances)
+      @instance.should_receive(:sync!).once.and_return(nil)
+      @instance.should_receive(:volumes).once.and_return([])
+
 
       @instance.connection.ec2.should_receive(:create_tags).once.
-        with('i-randomid1', {'Name' => 'instance1'}).and_return(nil)
+        with('i-randomid2', {'Name' => 'instance1'}).and_return(nil)
 
-      @instance.create
+      @instance.create_tags
+    end
+
+    it "creates same name tags for each volume" do
+      @instance.connection.ec2.should_not_receive(:launch_instances)
+      @instance.should_receive(:sync!).once.and_return(nil)
+      @instance.should_receive(:volumes).once.and_return(['vol1', 'vol2'])
+
+      name_tag = {'Name' => 'instance1'}
+      @instance.connection.ec2.should_receive(:create_tags).once.
+        with('i-randomid2', name_tag).and_return(nil)
+
+      @instance.connection.ec2.should_receive(:create_tags).once.
+         with('vol1', name_tag).and_return(nil)
+
+      @instance.connection.ec2.should_receive(:create_tags).once.
+        with('vol2', name_tag).and_return(nil)
+
+      @instance.create_tags
     end
   end
 
@@ -188,6 +213,26 @@ describe 'Instance::EC2' do
 
   it "extracts status from AWS description" do
     Instance::EC2.description_status({:aws_state => "running"}).should == "running"
+  end
+
+  it "lists attached EBS volumes" do
+    mock_basic_ec2_instance_and_connection
+    @instance.sync_from_description({
+      :aws_instance_id => 'i-randomid4',
+      :aws_state => 'running',
+      :block_device_mappings=>
+          [{:ebs_status=>"available",
+            :ebs_delete_on_termination=>true,
+            :ebs_attach_time=>"2009-11-18T14:03:34.000Z",
+            :device_name=>"/dev/sda1",
+            :ebs_volume_id=>"vol-e600f98f"},
+           {:ebs_status=>"attached",
+            :ebs_delete_on_termination=>true,
+            :ebs_attach_time=>"2009-11-18T14:03:34.000Z",
+            :device_name=>"/dev/sdk",
+            :ebs_volume_id=>"vol-f900f990"}]})
+
+    @instance.attached_volumes.should == ["vol-f900f990"]
   end
 end
 

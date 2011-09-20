@@ -46,11 +46,10 @@ describe "Command" do
       Command.new(@profile, nil).sync_profile_instances
     end
 
-    it "syncs only specified instances" do
+    it "overrides default syncing instances" do
       command = Command.new(@profile,nil)
 
-      command.should_receive(:sync_only_specified?).and_return(true)
-      @profile.should_receive(:specified_instances).and_return([@i1,@i2])
+      command.should_receive(:default_sync_instances).and_return([@i1,@i2])
       @profile.should_not_receive(:defined_instances)
 
       command.sync_profile_instances

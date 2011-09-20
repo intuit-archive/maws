@@ -19,21 +19,34 @@ describe 'AwsConnection' do
     end
 
     it "lists descriptions" do
-      @ac.ec2.should_receive(:describe_instances).and_return([:ec2_instance1, :ec2_instance2])
-      @ac.ec2_descriptions.should == [:ec2_instance1, :ec2_instance2]
+      @ac.ec2.should_receive(:describe_instances).and_return([{:aws_id => "ec2_instance1"}, {:aws_id => "ec2_instance2"}])
+      @ac.ec2_descriptions.should == [{:aws_id => "ec2_instance1"}, {:aws_id => "ec2_instance2"}]
+    end
+
+    it "sorts descriptions to list terminated first" do
+      @ac.ec2.should_receive(:describe_instances).and_return([
+        {:aws_id => "ec2_instance1", :aws_state => "running"},
+        {:aws_id => "ec2_instance2", :aws_state => "terminated"},
+        {:aws_id => "ec2_instance3", :aws_state => "pending"}])
+
+      @ac.ec2_descriptions.should == ([
+      {:aws_id => "ec2_instance2", :aws_state => "terminated"},
+      {:aws_id => "ec2_instance1", :aws_state => "running"},
+      {:aws_id => "ec2_instance3", :aws_state => "pending"}])
+
     end
 
     it "caches descriptions" do
-      @ac.ec2.should_receive(:describe_instances).once.and_return([:ec2_instance1, :ec2_instance2])
-      @ac.ec2_descriptions.should == [:ec2_instance1, :ec2_instance2]
-      @ac.ec2_descriptions.should == [:ec2_instance1, :ec2_instance2]
+      @ac.ec2.should_receive(:describe_instances).once.and_return([{:aws_id => "ec2_instance1"}, {:aws_id => "ec2_instance2"}])
+      @ac.ec2_descriptions.should == [{:aws_id => "ec2_instance1"}, {:aws_id => "ec2_instance2"}]
+      @ac.ec2_descriptions.should == [{:aws_id => "ec2_instance1"}, {:aws_id => "ec2_instance2"}]
     end
 
     it "clears cached descriptions" do
-      @ac.ec2.should_receive(:describe_instances).twice.and_return([:ec2_instance1, :ec2_instance2])
-      @ac.ec2_descriptions.should == [:ec2_instance1, :ec2_instance2]
+      @ac.ec2.should_receive(:describe_instances).twice.and_return([{:aws_id => "ec2_instance1"}, {:aws_id => "ec2_instance2"}])
+      @ac.ec2_descriptions.should == [{:aws_id => "ec2_instance1"}, {:aws_id => "ec2_instance2"}]
       @ac.clear_cached_descriptions
-      @ac.ec2_descriptions.should == [:ec2_instance1, :ec2_instance2]
+      @ac.ec2_descriptions.should == [{:aws_id => "ec2_instance1"}, {:aws_id => "ec2_instance2"}]
     end
   end
 
@@ -98,16 +111,16 @@ describe 'AwsConnection' do
 
   describe "descriptions grouped by name" do
     before do
-      Instance::EC2.should_receive(:description_name).any_number_of_times.and_return {|x| x.to_s}
+      Instance::EC2.should_receive(:description_name).any_number_of_times.and_return {|x| x[:aws_id]}
       Instance::RDS.should_receive(:description_name).any_number_of_times.and_return {|x| x.to_s}
       Instance::ELB.should_receive(:description_name).any_number_of_times.and_return {|x| x.to_s}
     end
 
     it "can be selected by name" do
-      @ac.ec2.should_receive(:describe_instances).once.and_return([:ec2_instance1, :ec2_instance2])
+      @ac.ec2.should_receive(:describe_instances).once.and_return([{:aws_id => "ec2_instance1"}, {:aws_id => "ec2_instance2"}])
 
-      @ac.description_for_name('ec2_instance1', :ec2).should == :ec2_instance1
-      @ac.description_for_name('ec2_instance2', :ec2).should == :ec2_instance2
+      @ac.description_for_name('ec2_instance1', :ec2).should == {:aws_id => "ec2_instance1"}
+      @ac.description_for_name('ec2_instance2', :ec2).should == {:aws_id => "ec2_instance2"}
     end
 
     it "are fetched for ec2 service only" do

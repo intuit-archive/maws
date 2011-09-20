@@ -53,7 +53,7 @@ web:
                 - start
 
 app:
-    count: 5
+    count: 3
     scope: lane
     keypair: jgaigalas_key
     configurations:

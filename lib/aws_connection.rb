@@ -41,7 +41,11 @@ class AwsConnection
 
   def ec2_descriptions
     return @ec2_descriptions if @ec2_descriptions
-    @ec2_descriptions = ec2.describe_instances
+    all_descriptions = ec2.describe_instances
+
+    terminated, nonterminated = all_descriptions.partition {|d| d[:aws_state] == "terminated"}
+    @ec2_descriptions = terminated + nonterminated
+
     info "        (EC2 #{@ec2_descriptions.count} total in the region)\n\n" unless @silent
 
     @ec2_descriptions
@@ -51,7 +55,7 @@ class AwsConnection
     return @rds_descriptions if @rds_descriptions
 
     @rds_descriptions = rds.describe_db_instances
-    info "        (RDS #{@rds_descriptions.count} total in the region)\n\n" #unless @silent
+    info "        (RDS #{@rds_descriptions.count} total in the region)\n\n" unless @silent
 
     @rds_descriptions
   end
@@ -74,11 +78,11 @@ class AwsConnection
   end
 
   def description_for_name(name, service_name)
-    @name_grouped_descriptions = {}
-    return @name_grouped_descriptions[service_name][name] if @name_grouped_descriptions[service_name]
+    @name_grouped_descriptions ||= {}
+    description =  @name_grouped_descriptions[service_name][name] if @name_grouped_descriptions[service_name]
+    return description if description
 
     @name_grouped_descriptions[service_name] = {}
-
     if service_name.to_sym == :ec2
       ec2_descriptions.each do |description|
         @name_grouped_descriptions[service_name][Instance::EC2.description_name(description)] = description

@@ -9,7 +9,7 @@ class Describe < Command
     end
   end
 
-  def sync_only_specified?
-    true
+  def default_sync_instances
+    @profile.specified_instances
   end
 end

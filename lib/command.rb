@@ -37,12 +37,12 @@ class Command
   def verify_configs
   end
 
-  def sync_only_specified?
-    false
-  end
-
   def specified_instances
     @profile.specified_instances
+  end
+
+  def specified_role_names
+    specified_instances.map {|i| i.role_name}.uniq
   end
 
   def pretty_describe(title, data)
@@ -65,11 +65,14 @@ class Command
   end
 
   def sync_profile_instances
-    sync_instances = sync_only_specified? ? @profile.specified_instances : @profile.defined_instances
-    sync_instances.each do |i|
+    default_sync_instances.each do |i|
       i.connection = @connection
       i.sync!
     end
+  end
+
+  def default_sync_instances
+    @profile.defined_instances
   end
 
 end
