@@ -73,6 +73,10 @@ class Instance::RDS < Instance
     alive? && !@role_config.replica
   end
 
+  def service
+    :rds
+  end
+
   def self.description_name(description)
     description[:aws_id]
   end

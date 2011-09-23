@@ -48,6 +48,10 @@ class Instance::ELB < Instance
     @profile.defined_instances.select {|i| instance_ids.include?(i.aws_id)}
   end
 
+  def service
+    :elb
+  end
+
   def self.description_name(description)
     description[:load_balancer_name]
   end

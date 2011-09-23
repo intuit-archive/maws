@@ -23,12 +23,17 @@ class Instance::EC2 < Instance
 
   def create_tags
     connection.ec2.create_tags(@aws_id, {'Name' => name})
-    sleep 1
-    sync!
+    info "tagged #{@aws_id} as #{name}"
 
-    volumes.each {|vid| connection.ec2.create_tags(vid, {'Name' => name})  }
+    sleep 6
+    sync_by_aws_id! # sync by aws_id because descriptions are cached by name and some are cached before the name tag is set
 
-    info "...done (#{name} is '#{aws_id}')"
+    volumes.each {|vid|
+      connection.ec2.create_tags(vid, {'Name' => name})
+      info "tagged #{vid} as #{name}"
+    }
+
+    info "...done (#{name} or #{@aws_id} is ready)"
   end
 
   def destroy
@@ -66,7 +71,7 @@ class Instance::EC2 < Instance
   end
 
   def volumes
-    return unless @aws_description[:block_device_mappings]
+    return [] unless @aws_description[:block_device_mappings]
     @aws_description[:block_device_mappings].map {|dm| dm[:ebs_volume_id]}
   end
 
@@ -74,6 +79,10 @@ class Instance::EC2 < Instance
     return unless @aws_description[:block_device_mappings]
 
     @aws_description[:block_device_mappings].find_all {|dm| dm[:ebs_status] == "attached"}.map {|dm| dm[:ebs_volume_id]}
+  end
+
+  def service
+    :ec2
   end
 
   def self.description_name(description)

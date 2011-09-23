@@ -37,7 +37,7 @@ app:
     service: ec2
     # image_id: 'ami-c763a2ae'
     # image_name: 'ami-bps-test-app'
-    image_name: 'bps-app-v6'
+    image_name: 'bps-app-v7'
     # instance_type: 'c1.xlarge'
     instance_type: 't1.micro'
     security_groups:

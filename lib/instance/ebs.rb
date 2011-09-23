@@ -18,6 +18,26 @@ class Instance::EBS < Instance
     aws_device[:aws_instance_id]
   end
 
+  def display_fields
+    if attached?
+      [:name, :device, :aws_id, :aws_status, :attachment_status, :aws_instance_id]
+    else
+      [:name, :aws_id, :aws_status]
+    end
+  end
+
+  def service
+    :ebs
+  end
+
+  def device
+    aws_device
+  end
+
+  def attachment_status
+    aws_attachment_status
+  end
+
   def self.description_name(description)
     (description[:tags] && description[:tags]["Name"]) || description[:aws_id]
   end
@@ -28,22 +48,6 @@ class Instance::EBS < Instance
 
   def self.description_status(description)
     description[:aws_status]
-  end
-
-  def display_fields
-    if attached?
-      [:name, :device, :aws_id, :aws_status, :attachment_status, :aws_instance_id]
-    else
-      [:name, :aws_id, :aws_status]
-    end
-  end
-
-  def device
-    aws_device
-  end
-
-  def attachment_status
-    aws_attachment_status
   end
 
 end

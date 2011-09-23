@@ -6,7 +6,7 @@ else
 end
 
 class AwsConnection
-  attr_accessor :silent
+  attr_accessor :silent, :name_grouped_descriptions
 
   def initialize(keyid, key, options)
     @access_key_id = keyid
@@ -67,6 +67,15 @@ class AwsConnection
     info "        (ELB #{@elb_descriptions.count} total in the region)\n\n" unless @silent
 
     @elb_descriptions
+  end
+
+  def descriptions_for_service(service)
+    service = service.to_sym
+    case service
+    when :ec2; ec2_descriptions
+    when :rds; rds_descriptions
+    when :elb; elb_descriptions
+    end
   end
 
   def clear_cached_descriptions

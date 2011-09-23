@@ -35,6 +35,12 @@ class Instance
     sync_from_description(description)
   end
 
+  def sync_by_aws_id!
+    all_descriptions = @connection.descriptions_for_service(service)
+    description = all_descriptions.find {|d| self.class.description_aws_id(d) == @aws_id}
+    sync_from_description(description)
+  end
+
   def sync_from_description(description)
     @aws_description = description || {}
     @aws_id = self.class.description_aws_id(@aws_description)
@@ -91,6 +97,10 @@ class Instance
   def configurations
     @@configurations_cache ||= {}
     @@configurations_cache[self.role_name] ||= merge_configurations(profile_role_config.configurations, role_config.configurations)
+  end
+
+  def service
+    raise ArgumentError, "No service for generic instance"
   end
 
   def display_fields
