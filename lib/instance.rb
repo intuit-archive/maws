@@ -35,10 +35,11 @@ class Instance
     sync_from_description(description)
   end
 
-  def sync_by_aws_id!
+  def sync_by_aws_id!(clear_cache = false)
+    @connection.clear_cached_descriptions if clear_cache
     all_descriptions = @connection.descriptions_for_service(service)
     description = all_descriptions.find {|d| self.class.description_aws_id(d) == @aws_id}
-    sync_from_description(description)
+    sync_from_description(description) if description # don't sync from nil, since that would wipe out @aws_id
   end
 
   def sync_from_description(description)

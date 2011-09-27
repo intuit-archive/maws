@@ -117,8 +117,8 @@ describe 'Instance::EC2' do
 
     it "creates name tag" do
       @instance.connection.ec2.should_not_receive(:launch_instances)
-      @instance.should_receive(:sync_by_aws_id!).once.and_return(nil)
-      @instance.should_receive(:volumes).once.and_return([])
+      @instance.should_receive(:sync_by_aws_id!).any_number_of_times.and_return(nil)
+      @instance.should_receive(:volumes).any_number_of_times.and_return([])
 
 
       @instance.connection.ec2.should_receive(:create_tags).once.
@@ -130,7 +130,7 @@ describe 'Instance::EC2' do
     it "creates same name tags for each volume" do
       @instance.connection.ec2.should_not_receive(:launch_instances)
       @instance.should_receive(:sync_by_aws_id!).once.and_return(nil)
-      @instance.should_receive(:volumes).once.and_return(['vol1', 'vol2'])
+      @instance.should_receive(:volumes).twice.and_return(['vol1', 'vol2'])
 
       name_tag = {'Name' => 'instance1'}
       @instance.connection.ec2.should_receive(:create_tags).once.

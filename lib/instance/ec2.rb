@@ -22,18 +22,50 @@ class Instance::EC2 < Instance
   end
 
   def create_tags
-    connection.ec2.create_tags(@aws_id, {'Name' => name})
-    info "tagged #{@aws_id} as #{name}"
-
-    sleep 6
-    sync_by_aws_id! # sync by aws_id because descriptions are cached by name and some are cached before the name tag is set
-
-    volumes.each {|vid|
-      connection.ec2.create_tags(vid, {'Name' => name})
-      info "tagged #{vid} as #{name}"
-    }
+    tag_instance_name
+    tag_volumes_names
 
     info "...done (#{name} or #{@aws_id} is ready)"
+  end
+
+  def tag_instance_name
+    retries_left = 20
+    loop do
+      begin
+        connection.ec2.create_tags(@aws_id, {'Name' => name})
+        info "tagged #{@aws_id} as #{name}"
+        return
+      rescue RightAws::AwsError => error
+        if error.message =~ /^InvalidInstanceID.NotFound/
+          info "TAGGING FAILED. RETRYING..."
+        else
+          raise error
+        end
+      end
+
+      retries_left -= 1
+      retries_left > 0 ? sleep(1) : break
+    end
+    error "Couldn't not tag #{@aws_id} with name #{name}. It might not exist on AWS"
+  end
+
+  def tag_volumes_names
+    retries_left = 30
+    loop do
+      sync_by_aws_id!(false) # sync from existing cached descriptions (in case we have these volumes here)
+      if volumes.count > 0
+        # tag and return
+        volumes.each {|vid|
+          connection.ec2.create_tags(vid, {'Name' => name})
+          info "tagged #{vid} as #{name}"
+        }
+        return
+      end
+      sync_by_aws_id!(true) # clear the cache and re-download descriptions to sync
+      retries_left -= 1
+      retries_left > 0 ? sleep(1) : break
+    end
+    error "No volumes found for #{name} (#{@aws_id})"
   end
 
   def destroy
