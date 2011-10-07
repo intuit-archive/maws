@@ -153,15 +153,15 @@ describe 'Instance::RDS' do
     end
 
     it "looks up master by role" do
-      @profile.should_receive(:select_first_instance).once.
-          with(:defined, 'master-rds').once.and_return(@instance)
+      @profile.should_receive(:select).once.
+          with(:first, 'master-rds').once.and_return(@instance)
 
       @rr_instance.connection.rds.should_receive(:create_db_instance_read_replica).once.and_return(nil)
       @rr_instance.create
     end
 
     it "will not create a replica of a replica" do
-      @profile.should_receive(:select_first_instance).and_return(@instance)
+      @profile.should_receive(:select).and_return(@instance)
       @instance.should_receive(:valid_read_replica_source?).and_return(false)
       @rr_instance.should_not_receive(:create_db_instance_read_replica)
 
@@ -169,7 +169,7 @@ describe 'Instance::RDS' do
     end
 
     it "uses correct configuration options" do
-      @profile.should_receive(:select_first_instance).and_return(@instance)
+      @profile.should_receive(:select).and_return(@instance)
       @rr_instance.connection.rds.should_receive(:create_db_instance_read_replica).once.
           with('rds1-rr', 'rds1', {
             :instance_class => 'verybigdb',
@@ -180,7 +180,7 @@ describe 'Instance::RDS' do
     end
 
     it "sets aws_id from create_db_instance_read_replica results" do
-      @profile.should_receive(:select_first_instance).and_return(@instance)
+      @profile.should_receive(:select).and_return(@instance)
       @rr_instance.connection.rds.should_receive(:create_db_instance_read_replica).once.
           and_return({:aws_id => 'rds1-rr'})
 

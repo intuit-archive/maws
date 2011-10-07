@@ -24,7 +24,7 @@ web:
     service: ec2
     # image_id: 'ami-572eef3e'
     # image_name: 'ami-bps-test-web'
-    image_name: 'bps-web-v3'
+    image_name: 'bps-web-v7'
     # instance_type: 'm1.large'
     instance_type: 't1.micro'
     security_groups:
@@ -59,4 +59,11 @@ slavedb:
     replica: true
     source_role: masterdb
     instance_class: 'db.m1.small'
+
+monitor:
+    service: ec2
+    image_name: 'bps-monitor-v1'
+    security_groups:
+        - default
+        - bps-e2e-app
 

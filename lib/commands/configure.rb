@@ -168,21 +168,22 @@ class Configure < Command
       return param_config
 
     elsif param_config.select_one.is_a? String
-      @profile.select_first_instance(:defined, param_config.select_one)
+      context = "#{instance.role_name}-#{template_name}-#{param_name}"
+      @profile.select(:chunk, param_config.select_one, :chunk_size => 1, :chunk_key => context).first
 
     elsif param_config.select_many.is_a? String
-      @profile.select_all_instances(:defined, param_config.select_many)
+      @profile.select(:all, param_config.select_many)
 
     elsif param_config.select_one
       context = "#{instance.role_name}-#{template_name}-#{param_name}"
-      @profile.register_instance_source(context, :defined, param_config.select_one.role, 1, param_config.select_one.scope)
-
-      @profile.next_instances_chunk(context).first
+      from = param_config.select_one.from # nil means default
+      @profile.select(:chunk, param_config.select_one.role, :chunk_size => 1, :chunk_key => context, :from => from)
 
     elsif param_config.select_many
       context = "#{instance.role_name}-#{template_name}-#{param_name}"
-      @profile.register_instance_source(context, :defined, param_config.select_many.role, param_config.select_many.chunk_size, param_config.select_many.scope)
-      @profile.next_instances_chunk(context)
+      from = param_config.select_many.from # nil means default
+      @profile.select(:chunk, param_config.select_many.role, :chunk_size => param_config.select_many.chunk_size, :chunk_key => context, :from => from)
+
     else
       param_config
     end

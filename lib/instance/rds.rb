@@ -9,8 +9,9 @@ class Instance::RDS < Instance
       # READ REPLICA
       info "creating RDS Read Replica #{name}..."
       source_role_name = @role_config.source_role
-      puts @profile.object_id
-      source_instance = @profile.select_first_instance(:defined, source_role_name)
+      self_scope = config(:scope)
+      source_instance = @profile.select(:first, source_role_name)
+
       unless source_instance.valid_read_replica_source?
         error "...can't create read replica - source rds #{source_instance.name} is not valid (#{source_instance.status})!"
         return

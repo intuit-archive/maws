@@ -29,6 +29,9 @@ describe "configure command" do
     parser.should_receive(:opt).once.
       with(:identity_file, "The SSH identity file", :short => "-i", :type => :string)
 
+    parser.should_receive(:opt).once.
+      with(:hostname, "The SSH hostname", :short => '-h', :type => :string, :default => nil)
+
     command.add_specific_options(parser)
   end
 

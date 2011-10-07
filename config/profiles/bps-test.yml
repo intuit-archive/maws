@@ -1,20 +1,8 @@
 roles: 'bps-test'
-lanes: 5
-
-# loadbalancer:
-#     count: 2
-#     scope: region
-#     configs:
-#         -
-#             template: loadbalancer.config
-#             web_servers:
-#                 select_many:
-#                     role: web
-#                     scope: region
-# queue:
-#     count: 2
-#     scope: zone
-
+zones:
+    - a
+    - b
+    - c
 
 lbweb:
     count: 1
@@ -22,8 +10,7 @@ lbweb:
 
 web:
     count: 1
-    scope: lane
-
+    scope: zone
     configurations:
         -
             name: vhosts
@@ -35,7 +22,7 @@ web:
                 balancer_members:
                     select_many:
                         role: app
-                        # scope: region
+                        from: zone
                         chunk_size: 2
         -
             name: stop
@@ -54,7 +41,7 @@ web:
 
 app:
     count: 3
-    scope: lane
+    scope: zone
     keypair: jgaigalas_key
     configurations:
         -
@@ -66,9 +53,10 @@ app:
                 masterdb:
                     select_one: masterdb
                 slavedb:
-                    select_one:
+                    select_many:
                         role: slavedb
-                        scope: region
+                        from: region
+                        chunk_size: 4
         -
             name: stop
             command: 'su - bps -c "cd /bps/site; if [ -e tmp/pids/unicorn.pid ]; then <tmp/pids/unicorn.pid xargs kill; fi"'
@@ -87,4 +75,20 @@ slavedb:
     count: 2
     scope: zone
 
+monitor:
+    count: 1
+    scope: zone
+    configurations:
+        -
+            name: set_instances
+            template: monitor_instances_list
+            location: '/tmp/monitor_instances_list'
+            template_params:
+                profile: profile
 
+        -
+            name: enable
+            command: "touch /tmp/ec2_monitor/enabled"
+        -
+            name: disable
+            command: "rm /tmp/alive_monitor.enabled"
