@@ -8,8 +8,8 @@ class ElbDescribe < ElbCommand
 
     elbs.each do |elb|
       title = elb.name.to_s.upcase
-      instances = elb.instances
-      text = "LOAD BALANCE INSTANCES:\n\n" + instances.collect {|i| "#{i.name} (#{i.aws_id})"}.join("\n")
+      instances = elb.attached_instances
+      text = "LOAD BALANCER INSTANCES:\n\n" + instances.collect {|i| "#{i.name} (#{i.aws_id})"}.join("\n")
 
       pretty_describe(title, text)
     end

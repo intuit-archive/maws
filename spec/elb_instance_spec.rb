@@ -152,7 +152,7 @@ describe 'Instance::ELB' do
       @instance.sync_from_description({:instances => ['i-randomid1', 'i-randomid2']})
       @profile.stub!(:defined_instances).and_return([@ec2i2])
 
-      @instance.instances.should == [@ec2i2]
+      @instance.attached_instances.should == [@ec2i2]
     end
   end
 

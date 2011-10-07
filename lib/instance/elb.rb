@@ -43,10 +43,12 @@ class Instance::ELB < Instance
     connection.elb.deregister_instances_with_load_balancer(@aws_id, instances.map{|i| i.aws_id})
   end
 
-  def instances
+  def attached_instances
     instance_ids = @aws_description[:instances]
     @profile.defined_instances.select {|i| instance_ids.include?(i.aws_id)}
   end
+
+
 
   def service
     :elb
