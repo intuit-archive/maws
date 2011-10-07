@@ -10,6 +10,7 @@ class Configure < Command
     parser.opt :dump, "Dump config files before uploading them", :type => :flag, :default => false
     parser.opt :command, "Command to run remotely (either name or a string)", :type => :string, :default => ""
     parser.opt :login_name, "The SSH login name", :short => '-l', :type => :string, :default => "root"
+    parser.opt :hostname, "The SSH hostname", :short => '-h', :type => :string, :default => nil
     parser.opt :identity_file, "The SSH identity file", :short => '-i', :type => :string
   end
 
@@ -78,7 +79,7 @@ class Configure < Command
   end
 
   def ssh_connect_to(instance)
-    host = instance.dns_name
+    host = options.hostname || instance.dns_name
     user = options.login_name
 
     identity_file = options.identity_file || File.join(KEYPAIRS_PATH, "#{instance.keypair}.pem")
@@ -90,7 +91,7 @@ class Configure < Command
   end
 
   def ssh_disconnect(ssh, instance)
-    host = instance.dns_name
+    host = options.hostname || instance.dns_name
     user = options.login_name
 
     info "...done (disconnected from '#{user}@#{host}')"
@@ -159,6 +160,9 @@ class Configure < Command
   def resolve_template_param(instance, template_name, param_name, param_config)
     if param_config == 'self'
       return instance
+
+    elsif param_config == 'profile'
+      return @profile
 
     elsif param_config.is_a? String
       return param_config
