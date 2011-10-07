@@ -1,3 +1,8 @@
+aliases:
+    &stop_http
+        name: stop
+        command: 'service httpd2 stop'
+
 lbweb:
     service: elb
     listeners:
@@ -31,6 +36,8 @@ web:
         - default
         - bps-e2e-web
     user_data: 'abc123'
+    configurations:
+        - *stop_http
 
 
 app:

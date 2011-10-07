@@ -4,6 +4,12 @@ zones:
     - b
     - c
 
+aliases:
+    &start_http
+        name: start
+        command: 'service httpd2 start'
+
+
 lbweb:
     count: 1
     scope: region
@@ -24,12 +30,9 @@ web:
                         role: app
                         from: zone
                         chunk_size: 2
-        -
-            name: stop
-            command: 'service httpd2 stop'
-        -
-            name: start
-            command: 'service httpd2 start'
+
+        - *start_http
+
         -
             name: ips
             command: 'sudo -i ifconfig | grep "inet addr"'

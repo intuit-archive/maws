@@ -9,7 +9,7 @@ def mash x
 end
 
 class Profile
-  RESERVED_ROLE_NAMES = %w(roles lanes name zones)
+  RESERVED_ROLE_NAMES = %w(roles lanes name zones aliases)
   attr_reader :all_instances, :defined_instances, :specified_instances, :defined_instances_in_specified_zone
 
   attr_reader :profile_config, :roles_config
@@ -29,6 +29,7 @@ class Profile
     defined_role_names.each do |role_name|
       role_config = @roles_config[role_name]
       profile_role_config = @profile_config[role_name]
+
       profile_role_config.count.times do |i|
         instances = []
         name = "%s-%s-%d" % [self.name,role_name,i+1]
@@ -94,7 +95,7 @@ class Profile
   end
 
   def missing_role_names
-    available_role_names = @roles_config.keys
+    available_role_names = (@roles_config.keys - RESERVED_ROLE_NAMES)
     defined_role_names - available_role_names
   end
 
