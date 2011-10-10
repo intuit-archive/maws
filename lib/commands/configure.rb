@@ -18,7 +18,7 @@ class Configure < Command
     @ssh_actions = {}
 
     configurable_instances = specified_instances.select do |instance|
-      instance.status == 'running' &&
+      (instance.status == 'running' || instance.configure_without_running) &&
       (instance.configurations || !options.command.empty?)
     end
 

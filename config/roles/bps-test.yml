@@ -29,7 +29,7 @@ web:
     service: ec2
     # image_id: 'ami-572eef3e'
     # image_name: 'ami-bps-test-web'
-    image_name: 'bps-web-v7'
+    image_name: 'bps-web-current'
     # instance_type: 'm1.large'
     instance_type: 't1.micro'
     security_groups:
@@ -43,11 +43,12 @@ web:
 app:
     service: ec2
     # image_id: 'ami-87b578ee'
-    image_name: 'bps-app-v10'
+    image_name: 'bps-app-v13'
     # instance_type: 'c1.xlarge'
     instance_type: 't1.micro'
     security_groups:
         - bps-e2e-app
+        - default
     user_data: 'APPDATA'
 
 masterdb:
@@ -70,7 +71,23 @@ slavedb:
 monitor:
     service: ec2
     image_name: 'bps-monitor-v1'
+    configure_without_running: true
     security_groups:
         - default
         - bps-e2e-app
+    configurations:
+        -
+            name: hosts_list
+            template: monitor_instances_list
+            location: '/tmp/ec2_monitor/hosts_list'
+            template_params:
+                profile: profile
+
+        -
+            name: enable
+            command: "touch /tmp/ec2_monitor/enabled"
+        -
+            name: disable
+            command: "rm /tmp/ec2_monitor/enabled
+
 

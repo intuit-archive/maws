@@ -81,17 +81,3 @@ slavedb:
 monitor:
     count: 1
     scope: zone
-    configurations:
-        -
-            name: set_instances
-            template: monitor_instances_list
-            location: '/tmp/monitor_instances_list'
-            template_params:
-                profile: profile
-
-        -
-            name: enable
-            command: "touch /tmp/ec2_monitor/enabled"
-        -
-            name: disable
-            command: "rm /tmp/alive_monitor.enabled"
