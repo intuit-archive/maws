@@ -64,6 +64,8 @@ class Profile
     source_instances = (from == :zone) ? @defined_instances_in_specified_zone : @defined_instances
     source_instances = source_instances.find_all {|i| i.role_name == role_name }
 
+    what = :all if what == :chunk && options[:chunk_size].nil?
+
     case what
     when :all : source_instances
     when :first : source_instances.first
