@@ -177,7 +177,7 @@ class Configure < Command
     elsif param_config.select_one
       context = "#{instance.role_name}-#{template_name}-#{param_name}"
       from = param_config.select_one.from # nil means default
-      @profile.select(:chunk, param_config.select_one.role, :chunk_size => 1, :chunk_key => context, :from => from)
+      @profile.select(:chunk, param_config.select_one.role, :chunk_size => 1, :chunk_key => context, :from => from).first
 
     elsif param_config.select_many
       context = "#{instance.role_name}-#{template_name}-#{param_name}"
