@@ -129,6 +129,8 @@ class Configure < Command
   def generate_and_queue_upload_template(instance, configuration)
     # prepare params for config file interpolation
     resolved_params = {}
+    configuration.template_params ||= {}
+
     configuration.template_params.each do |param_name, param_config|
       resolved_params[param_name] = resolve_template_param(instance, configuration.template, param_name, param_config)
     end
