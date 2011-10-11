@@ -16,6 +16,7 @@ class Instance::EC2 < Instance
       :max_count => 1,
       :group_ids => config(:security_groups),
       :user_data => config(:user_data),
+      :monitoring_enabled => config(:monitoring_enabled),
       :instance_type => config(:instance_type))
 
     sync_from_description(results.first)
