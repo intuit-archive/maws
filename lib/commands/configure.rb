@@ -130,6 +130,7 @@ class Configure < Command
     configuration.template_params.each do |param_name, param_config|
       resolved_params[param_name] = resolve_template_param(instance, configuration.template, param_name, param_config)
     end
+    resolved_params['instance'] = instance
 
     # generate config file
     template_path = File.join(TEMPLATES_PATH, configuration.template + ".erb")

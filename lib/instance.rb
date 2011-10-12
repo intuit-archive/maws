@@ -68,6 +68,10 @@ class Instance
     @role_config.name
   end
 
+  def profile_name
+    @profile.name
+  end
+
   def has_approximate_status?(status)
     if status == "n/a" or status == "terminated"
       !alive?
