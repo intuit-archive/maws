@@ -21,8 +21,8 @@ web:
         -
             name: vhosts
             template: 'httpd-vhosts.conf'
-            # location: '/usr/local/apache2/conf/httpd-vhosts.conf'
-            location: 'test-vhosts.conf'
+            location: '/usr/local/apache2/conf/httpd-vhosts.conf'
+            copy_as_user: 'root'
             template_params:
                 balancer: self
                 balancer_members:

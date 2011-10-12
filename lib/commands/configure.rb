@@ -112,16 +112,18 @@ class Configure < Command
   end
 
   def queue_remote_command(instance, name, command)
-    queue_ssh_action(instance) do |ssh|
-      if name
-        ensure_output :info, "   executing #{name} command: " + command
-      else
-        ensure_output :info, "   executing #{command}"
-      end
+    queue_ssh_action(instance) {|ssh| do_remote_command(ssh, instance, name, action)}
+  end
 
-      result = ssh.exec!(command)
-      ensure_output :info, result if result
+  def do_remote_command(ssh, instance, name, command)
+    if name
+      ensure_output :info, "   executing #{name} command: " + command
+    else
+      ensure_output :info, "   executing #{command}"
     end
+
+    result = ssh.exec!(command)
+    ensure_output :info, result if result
   end
 
   def generate_and_queue_upload_template(instance, configuration)
@@ -151,7 +153,14 @@ class Configure < Command
         ensure_output :info, "-------- END #{config_output_path} --------\n\n"
       end
 
-      ssh.scp.upload!(config_output_path, configuration.location)
+      if configuration.copy_as_user
+        remote_tmp_path = File.join("/tmp/", "#{instance.name}--#{instance.aws_id}." + configuration.template)
+        ssh.scp.upload!(config_output_path, remote_tmp_path)
+        cp_command = "sudo su - #{configuration.copy_as_user} -c 'mv #{remote_tmp_path} #{configuration.location}'"
+        do_remote_command(ssh, instance, 'copy_as_user', cp_command)
+      else
+        ssh.scp.upload!(config_output_path, configuration.location)
+      end
 
       timestamp = ssh.exec!("stat -c %y #{configuration.location}")
       ensure_output :info, "            new timestamp for #{configuration.location}: " + timestamp
