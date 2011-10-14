@@ -112,7 +112,7 @@ class Configure < Command
   end
 
   def queue_remote_command(instance, name, command)
-    queue_ssh_action(instance) {|ssh| do_remote_command(ssh, instance, name, action)}
+    queue_ssh_action(instance) {|ssh| do_remote_command(ssh, instance, name, command)}
   end
 
   def do_remote_command(ssh, instance, name, command)
