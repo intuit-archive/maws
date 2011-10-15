@@ -158,7 +158,7 @@ class Configure < Command
       if configuration.copy_as_user
         remote_tmp_path = File.join("/tmp/", "#{instance.name}--#{instance.aws_id}." + configuration.template)
         ssh.scp.upload!(config_output_path, remote_tmp_path)
-        cp_command = "sudo su - #{configuration.copy_as_user} -c 'cp #{remote_tmp_path} #{configuration.location}'; sudo rm #{remote_tmp_path}"
+        cp_command = "sudo su - #{configuration.copy_as_user} -c 'cp -f #{remote_tmp_path} #{configuration.location}'; sudo rm #{remote_tmp_path}"
         do_remote_command(ssh, instance, 'copy_as_user', cp_command)
       else
         ssh.scp.upload!(config_output_path, configuration.location)
