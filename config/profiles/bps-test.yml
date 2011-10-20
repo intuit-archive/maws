@@ -4,6 +4,9 @@ zones:
     - b
     - c
 
+settings:
+    key1: "val1.1"
+
 aliases:
     &start_http
         name: start

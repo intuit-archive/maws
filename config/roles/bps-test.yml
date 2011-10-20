@@ -3,6 +3,10 @@ aliases:
         name: stop
         command: 'service httpd2 stop'
 
+settings:
+    key1: "val1"
+    key2: "val2"
+
 lbweb:
     service: elb
     listeners:

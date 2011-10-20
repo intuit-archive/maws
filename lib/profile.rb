@@ -9,16 +9,22 @@ def mash x
 end
 
 class Profile
-  RESERVED_ROLE_NAMES = %w(roles lanes name zones aliases)
+  RESERVED_ROLE_NAMES = %w(roles lanes name zones aliases settings)
   attr_reader :all_instances, :defined_instances, :specified_instances, :defined_instances_in_specified_zone
 
   attr_reader :profile_config, :roles_config
-  attr_accessor :command_options, :zones
+  attr_accessor :command_options, :zones, :settings
 
   def initialize(profile_config, roles_config)
     @profile_config = profile_config
     @roles_config = roles_config
     @zones = []
+
+    roles_settings = roles_config.settings || {}
+    profile_settings = profile_config.settings || {}
+
+    @settings = mash(roles_settings.merge(profile_settings))
+    @settings.delete('name')
   end
 
   def build_defined_instances

@@ -135,6 +135,7 @@ class Configure < Command
       resolved_params[param_name] = resolve_template_param(instance, configuration.template, param_name, param_config)
     end
     resolved_params['instance'] = instance
+    resolved_params['settings'] = @profile.settings
 
     # generate config file
     template_path = File.join(TEMPLATES_PATH, configuration.template + ".erb")
