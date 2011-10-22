@@ -83,7 +83,7 @@ monitor:
         -
             name: hosts_list
             template: monitor_instances_list
-            location: '/tmp/ec2_monitor/hosts_list'
+            location: '/tmp/ec2_monitor/hosts_lists/main'
             template_params:
                 profile: profile
 

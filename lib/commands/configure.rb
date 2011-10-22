@@ -2,6 +2,7 @@ require 'lib/command'
 require 'erubis'
 require 'net/ssh'
 require 'net/scp'
+require 'fileutils'
 
 class Configure < Command
   TEMPLATE_OUTPUT_DIR = File.expand_path("tmp", BASE_PATH)
@@ -12,6 +13,7 @@ class Configure < Command
     parser.opt :login_name, "The SSH login name", :short => '-l', :type => :string, :default => "root"
     parser.opt :hostname, "The SSH hostname", :short => '-h', :type => :string, :default => nil
     parser.opt :identity_file, "The SSH identity file", :short => '-i', :type => :string
+    parser.opt :copy_to_local, "Copy template output to local folders", :short => '-L', :type => :flag, :default => false
   end
 
   def run!
@@ -146,6 +148,11 @@ class Configure < Command
     config_output_path = File.join(TEMPLATE_OUTPUT_DIR, "#{instance.name}--#{instance.aws_id}." + configuration.template)
     File.open(config_output_path, "w") {|f| f.write(generated_config)}
     info "generated  '#{config_output_path}'"
+
+    if options.copy_to_local
+      info "copying to local path: #{configuration.location}"
+      FileUtils.cp(config_output_path, configuration.location)
+    end
 
     queue_ssh_action(instance) do |ssh|
       ensure_output :info, "configuring #{configuration.template} for #{instance.name}"

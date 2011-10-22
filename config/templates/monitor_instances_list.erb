@@ -1,4 +1,3 @@
-<%= settings.inspect %>
 <% profile.defined_instances.find_all{|i| i.service == :ec2 && !i.configure_without_running}.each do |i|%>
 <%= i.name %> <%= i.dns_name%>
 <% end %>
