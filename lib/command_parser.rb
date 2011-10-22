@@ -67,7 +67,7 @@ class CommandParser
     end
 
     @roles = mash(YAML.load_file(roles_config_path))
-    @roles.keys.each {|name| @roles[name].name = name}
+    @roles.keys.each {|name| @roles[name].name = name unless Profile::RESERVED_ROLE_NAMES.include?(name)}
   end
 
   def detect_selected_profile

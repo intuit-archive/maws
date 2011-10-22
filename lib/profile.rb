@@ -24,7 +24,6 @@ class Profile
     profile_settings = profile_config.settings || {}
 
     @settings = mash(roles_settings.merge(profile_settings))
-    @settings.delete('name')
   end
 
   def build_defined_instances
