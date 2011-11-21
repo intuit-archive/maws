@@ -47,7 +47,7 @@ web:
 app:
     service: ec2
     # image_id: 'ami-87b578ee'
-    image_name: 'bps-app-v13'
+    image_name: 'bps-app-current'
     # instance_type: 'c1.xlarge'
     instance_type: 't1.micro'
     security_groups:
@@ -83,7 +83,7 @@ monitor:
         -
             name: hosts_list
             template: monitor_instances_list
-            location: '/tmp/ec2_monitor/hosts_lists/main'
+            location: '/tmp/ec2_monitor/hosts/bpstest'
             template_params:
                 profile: profile
 
