@@ -1,9 +1,0 @@
-#!/bin/bash
-
-if [[ $# == 0 ]]
-then  
-  echo "Usage: it params_for_applescript"
-  exit
-fi
-
-osascript ./scripts/it.scpt $*
