@@ -1,4 +1,5 @@
 roles: 'bps-test'
+security_rules: 'bps'
 zones:
     - a
     - b

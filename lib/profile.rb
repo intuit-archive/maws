@@ -9,16 +9,17 @@ def mash x
 end
 
 class Profile
-  RESERVED_ROLE_NAMES = %w(roles lanes name zones aliases settings)
+  RESERVED_ROLE_NAMES = %w(roles lanes name zones aliases settings security_rules)
   attr_reader :all_instances, :defined_instances, :specified_instances, :defined_instances_in_specified_zone
 
   attr_reader :profile_config, :roles_config
-  attr_accessor :command_options, :zones, :settings
+  attr_accessor :command_options, :zones, :settings, :security_rules
 
   def initialize(profile_config, roles_config)
     @profile_config = profile_config
     @roles_config = roles_config
     @zones = []
+    @security_rules = mash({})
 
     roles_settings = roles_config.settings || {}
     profile_settings = profile_config.settings || {}
@@ -99,6 +100,10 @@ class Profile
 
   def name
     @profile_config.name
+  end
+
+  def service_for_role_name(role_name)
+    role_config = @roles_config[role_name].service.to_sym
   end
 
   def missing_role_names

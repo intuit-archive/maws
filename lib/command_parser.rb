@@ -8,10 +8,11 @@ require 'lib/trollop'
 class CommandParser
   attr_reader :available_profiles, :available_commands
 
-  def initialize(profiles_path, roles_path, commands_path, default_region, default_zone)
+  def initialize(profiles_path, roles_path, commands_path, security_rules_path, default_region, default_zone)
     @profiles_path = profiles_path
     @roles_path = roles_path
     @commands_path = commands_path
+    @security_rules_path = security_rules_path
 
     @default_region = default_region
     @default_zone = default_zone
@@ -56,7 +57,10 @@ class CommandParser
     @profile_config.name = @selected_profile
 
     load_roles_config
+    load_security_rules
+
     @profile = Profile.new(@profile_config, @roles)
+    @profile.security_rules = @security_rules
   end
 
   def load_roles_config
@@ -68,6 +72,19 @@ class CommandParser
 
     @roles = mash(YAML.load_file(roles_config_path))
     @roles.keys.each {|name| @roles[name].name = name unless Profile::RESERVED_ROLE_NAMES.include?(name)}
+  end
+
+  def load_security_rules
+    security_rules_name = @profile_config.security_rules
+    return if security_rules_name.nil? || security_rules_name.empty?
+
+    security_rules_path = @security_rules_path + "/#{security_rules_name}.yml"
+    unless File.exists? security_rules_path
+      error "profile #{@profile.name} config file is broken - can't find security rules file #{security_rules_path}"
+      exit
+    end
+
+    @security_rules = mash(YAML.load_file(security_rules_path))
   end
 
   def detect_selected_profile
