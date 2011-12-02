@@ -35,18 +35,25 @@ class SetSecurityGroups < Command
     begin
       update_definitions_rules_with_real_ids(@security_group_definitions)
     rescue BadSecurityRule => err
-      puts "Bad security rule: #{err.message}"
-      puts "No AWS security rules will be updated."
+      info "Bad security rule: #{err.message}"
+      info "No AWS security rules will be updated."
       return
     end
 
     @security_group_definitions.each { |name, definition|
-      puts "#{definition[:service]} security group #{name}"
+      info "#{definition[:service]} security group #{name}"
 
       clear_out_security_group(name, definition)
+
+      # rds takes a while to propagate. this code handles errors with retries, but this sleep keeps the noise down
+      if definition[:service] == :rds
+        info "...waiting for revoke to take effect..."
+        sleep 20
+      end
+
       set_security_group(name, definition)
 
-      puts "done\n\n"
+      info "done\n\n"
     }
   end
 
@@ -78,7 +85,7 @@ class SetSecurityGroups < Command
 
 
   def create_security_group(name, definition)
-    puts "CREATING #{name}"
+    info "CREATING #{name}"
 
     if definition[:service] == :ec2
       @connection.ec2.create_security_group(name, name) # description same as name
@@ -88,7 +95,7 @@ class SetSecurityGroups < Command
   end
 
   def clear_out_security_group(name, definition)
-    puts "    clearing out #{name}"
+    info "    clearing out #{name}"
     description =  definition[:description]
     return unless description && !description.empty?
 
@@ -101,7 +108,7 @@ class SetSecurityGroups < Command
   end
 
   def set_security_group(name, definition)
-    puts "    adding security rules to #{name}"
+    info "    adding security rules to #{name}"
     service = definition[:service]
 
     definition[:rules].each { |rule|
@@ -112,33 +119,33 @@ class SetSecurityGroups < Command
       protocol_description = service == :ec2 ? "#{rule.protocol}:#{rule.port_from}-#{rule.port_to}" : ""
 
       if rule.group
-        puts "        allow from #{rule.owner_id}/#{rule.group_id} (#{rule.group}) #{protocol_description}"
+        info "        allow from #{rule.owner_id}/#{rule.group_id} (#{rule.group}) #{protocol_description}"
         if service == :ec2
           authorize_ec2_security_group_rule(definition[:group_id], rule.port_from, rule.port_to, rule.protocol,
                                             :groups => {rule.owner_id => rule.group_id})
         else
-          authorize_rds_security_group_rule(definition[:group_id],
+          safe_authorize_rds_security_group_rule(definition[:group_id],
                                             :ec2_security_group_owner => rule.owner_id,
                                             :ec2_security_group_name => rule.group_name)
         end
       elsif rule.role
-        puts "        allow from #{rule.owner_id}/#{rule.group_id} (role '#{rule.role}') #{protocol_description}"
+        info "        allow from #{rule.owner_id}/#{rule.group_id} (role '#{rule.role}') #{protocol_description}"
         if service == :ec2
           authorize_ec2_security_group_rule(definition[:group_id], rule.port_from, rule.port_to, rule.protocol,
                                             :groups => {rule.owner_id => rule.group_id})
         else
-          authorize_rds_security_group_rule(definition[:group_id],
+          safe_authorize_rds_security_group_rule(definition[:group_id],
                                             :ec2_security_group_owner => rule.owner_id,
                                             :ec2_security_group_name => rule.group_id)
         end
       elsif rule.cidr
-        puts "        allow from #{rule.cidr.inspect} #{protocol_description}"
+        info "        allow from #{rule.cidr.inspect} #{protocol_description}"
         if service == :ec2
           authorize_ec2_security_group_rule(definition[:group_id], rule.port_from, rule.port_to, rule.protocol,
                                             :cidr_ips => [rule.cidr].flatten)
         else
           [rule.cidr].flatten.each { |cidr|
-            authorize_rds_security_group_rule(definition[:group_id], :cidrip => cidr)
+            safe_authorize_rds_security_group_rule(definition[:group_id], :cidrip => cidr)
           }
         end
       end
@@ -162,7 +169,7 @@ class SetSecurityGroups < Command
       revoke_params[:from_port] = permission[:from_port]
       revoke_params[:to_port] = permission[:to_port]
 
-      puts "        revoking #{revoke_params.inspect}"
+      info "        revoking #{revoke_params.inspect}"
       @connection.ec2.modify_security_group(:revoke, :ingress,
         group_id, revoke_params);
     }
@@ -181,21 +188,18 @@ class SetSecurityGroups < Command
 
   def clear_out_rds_security_group(name, description)
     description[:ec2_security_groups].each {|group_permission|
-      puts "        revoking from #{group_permission[:owner_id]}/#{group_permission[:name]}"
+      info "        revoking from #{group_permission[:owner_id]}/#{group_permission[:name]}"
       safe_revoke_rds_security_group(name,
                                        :ec2_security_group_owner => group_permission[:owner_id],
                                        :ec2_security_group_name  => group_permission[:name])
     }
 
     description[:ip_ranges].each {|ip_permission|
-      puts "        revoking from #{ip_permission[:cidrip]}.inspect"
+      info "        revoking from #{ip_permission[:cidrip].inspect}"
       safe_revoke_rds_security_group(name, :cidrip => ip_permission[:cidrip])
     }
   end
 
-  def authorize_rds_security_group_rule(group_id, rule)
-    @connection.rds.authorize_db_security_group_ingress(group_id, rule)
-  end
 
   def update_definitions_rules_with_real_ids(definitions)
     definitions.each { |name, definition|
@@ -256,25 +260,33 @@ class SetSecurityGroups < Command
 
 
   def safe_revoke_rds_security_group(name, params)
-    tries = 3
+    rds_logger = @connection.rds.logger
+    @connection.rds.logger = NullLogger.new
+
+    tries = 4
 
     loop do
-      return if tries <= 0
+      if tries <= 0
+        info "!!!!!! FAILED TO REVOKE: #{name} #{params.inspect} !!!!!!"
+        return
+      end
+
       begin
         @connection.rds.revoke_db_security_group_ingress(name, params)
+        info "            (succesfully revoked)"
         return
       rescue Exception => e
         if e.message =~ /AuthorizationNotFound/
-          puts "(not authorized. nothing to do here)"
+          info "            (not authorized. nothing to do here)"
           return
 
         elsif e.message =~ /InvalidDBSecurityGroupState: Cannot revoke an authorization that is in the revoking state/
-          puts "(already revoking - will be revoked shortly)"
+          info "            (already revoking - will be revoked shortly)"
           sleep 10
           tries -= 1
 
         elsif e.message =~ /InvalidDBSecurityGroupState: Cannot revoke an authorization that is in the authorizing state/
-          info "(not yet finished authorizing. waiting and retrying...)"
+          info "            (not yet finished authorizing. waiting and retrying...)"
           sleep 10
           tries -= 1
 
@@ -284,6 +296,51 @@ class SetSecurityGroups < Command
         end
       end
     end
+  ensure
+    @connection.rds.logger = rds_logger
+  end
+
+
+  def safe_authorize_rds_security_group_rule(name, params)
+    rds_logger = @connection.rds.logger
+    @connection.rds.logger = NullLogger.new
+
+    tries = 4
+
+    loop do
+      if tries <= 0
+        info "!!!!!! FAILED TO AUTHORIZE: #{name} #{params.inspect} !!!!!!"
+        return
+      end
+
+      begin
+        @connection.rds.authorize_db_security_group_ingress(name, params)
+        info "            (succesfully authorized)"
+        return
+      rescue Exception => e
+        if e.message =~ /AuthorizationAlreadyExists/
+          info "            (authorization already exists. probably means it is still being revoked. retrying...)"
+          sleep 10
+          tries -= 1
+
+        elsif e.message =~ /InvalidDBSecurityGroupState: Cannot authorize an authorization that is in the revoking state/
+          info "            (currently revoking - will be revoked shortly. will retry authorizing then)"
+          sleep 10
+          tries -= 1
+
+        elsif e.message =~ /InvalidDBSecurityGroupState: Cannot authorize an authorization that is in the authorizing state/
+          info "            (already authorizing. waiting and retrying to confirm...)"
+          sleep 10
+          tries -= 1
+
+        else
+          sleep 1
+          tries -= 1
+        end
+      end
+    end
+  ensure
+    @connection.rds.logger = rds_logger
   end
 
 

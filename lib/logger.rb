@@ -1,3 +1,18 @@
+class NullLogger
+  def error str
+  end
+
+  def warn str
+  end
+
+  def info str
+  end
+
+  def debug str
+  end
+end
+
+
 class RightAWSLogger
   def error str
     $stderr.puts "[ERROR]: #{str}"
