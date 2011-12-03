@@ -104,6 +104,10 @@ class Instance
     @@configurations_cache[self.role_name] ||= merge_configurations(profile_role_config.configurations, role_config.configurations)
   end
 
+  def security_groups
+    (["#{@profile.name}-#{service}_default", "#{@profile.name}-#{role_name}"] + config(:security_groups).to_a).uniq
+  end
+
   def service
     raise ArgumentError, "No service for generic instance"
   end

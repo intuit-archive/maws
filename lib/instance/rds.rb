@@ -30,7 +30,7 @@ class Instance::RDS < Instance
       create_opts[:allocated_storage] = config(:allocated_storage)
       create_opts[:db_name] = config(:db_name)
       create_opts[:db_parameter_group] = config(:db_parameter_group)
-      create_opts[:db_security_groups] = config(:db_security_groups)
+      create_opts[:db_security_groups] = security_groups
       create_opts[:backup_retention_period] = config(:backup_retention_period)
       create_opts[:preferred_backup_window] = config(:preferred_backup_window)
       create_opts[:preferred_maintenance_window] = config(:preferred_maintenance_window)

@@ -62,8 +62,6 @@ masterdb:
     master_username: 'root'
     master_password: 'intuit01'
     db_name:
-    security_groups:
-        - bps-db
     parameter_group: 'bps-db'
 
 slavedb:

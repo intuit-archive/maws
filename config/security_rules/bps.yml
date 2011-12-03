@@ -33,3 +33,7 @@ web:
         group: 'amazon-elb/sg-843f59ed'
         port: 80
         protocol: tcp
+
+masterdb:
+    -
+        role: app

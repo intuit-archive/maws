@@ -9,12 +9,13 @@ class Instance::EC2 < Instance
     info "creating EC2 #{name}..."
     image_id = @role_config.image_id || connection.image_id_for_image_name(@role_config.image_name)
     return if image_id.nil?
+
     results = connection.ec2.launch_instances(image_id,
       :availability_zone => @command_options.availability_zone,
       :key_name => config(:keypair),
       :min_count => 1,
       :max_count => 1,
-      :group_ids => config(:security_groups),
+      :group_names => security_groups,
       :user_data => config(:user_data),
       :monitoring_enabled => config(:monitoring_enabled),
       :instance_type => config(:instance_type))
