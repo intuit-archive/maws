@@ -96,7 +96,13 @@ class Instance::EC2 < Instance
     return false unless alive? && self.dns_name && !self.dns_name.empty?
 
     begin
-      ssh = Net::SSH.start(dns_name, "phoneyuser", {:auth_methods => ["publickey"], :timeout => 1, :keys_only => true })
+      3.times { # retry on host unreachable errors
+        begin
+          Net::SSH.start(dns_name, "phoneyuser", {:auth_methods => ["publickey"], :timeout => 1, :keys_only => true })
+        rescue Errno::EHOSTUNREACH
+          sleep 2
+        end
+      }
     rescue Net::SSH::AuthenticationFailed
       return true
     rescue Object

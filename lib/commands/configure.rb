@@ -89,7 +89,13 @@ class Configure < Command
 
     info "connecting to '#{user}@#{host}'..."
 
-    Net::SSH.start(host, user, { :keys => [identity_file], :verbose => :warn, :auth_methods => ["publickey"], :keys_only => true })
+    3.times { # retry on host unreachable errors
+      begin
+        return Net::SSH.start(host, user, { :keys => [identity_file], :verbose => :warn, :auth_methods => ["publickey"], :keys_only => true })
+      rescue Errno::EHOSTUNREACH
+        sleep 2
+      end
+    }
   end
 
   def ssh_disconnect(ssh, instance)
