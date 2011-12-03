@@ -96,7 +96,7 @@ class Instance::EC2 < Instance
     return false unless alive? && self.dns_name && !self.dns_name.empty?
 
     begin
-      ssh = Net::SSH.start(dns_name, "phoneyuser", {:auth_methods => ["publickey"], :timeout => 1 })
+      ssh = Net::SSH.start(dns_name, "phoneyuser", {:auth_methods => ["publickey"], :timeout => 1, :keys_only => true })
     rescue Net::SSH::AuthenticationFailed
       return true
     rescue Object

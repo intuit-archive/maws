@@ -89,7 +89,7 @@ class Configure < Command
 
     info "connecting to '#{user}@#{host}'..."
 
-    Net::SSH.start(host, user, { :keys => [identity_file], :verbose => :warn, :auth_methods => ["publickey"] })
+    Net::SSH.start(host, user, { :keys => [identity_file], :verbose => :warn, :auth_methods => ["publickey"], :keys_only => true })
   end
 
   def ssh_disconnect(ssh, instance)
