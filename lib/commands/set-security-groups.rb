@@ -12,8 +12,10 @@ class SetSecurityGroups < Command
     rules.keys.map {|rules_set_name|
       security_group_name = "#{@profile.name}-#{rules_set_name}"
       service = if rules_set_name == 'ec2_default'
+        security_group_name = 'ec2_default'
         :ec2
       elsif rules_set_name == 'rds_default'
+        security_group_name = 'rds_default'
         :rds
       else
         @profile.service_for_role_name(rules_set_name)
