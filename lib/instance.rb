@@ -105,7 +105,14 @@ class Instance
   end
 
   def security_groups
-    (["#{service}_default", "#{@profile.name}-#{role_name}"] + config(:security_groups).to_a).uniq
+    groups = config(:security_groups).to_a
+    groups << "#{service}_default"
+
+    if @profile.security_rules and @profile.security_rules[role_name]
+      groups << "#{@profile.name}-#{role_name}"
+    end
+
+    groups
   end
 
   def service
