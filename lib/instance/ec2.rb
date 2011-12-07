@@ -1,5 +1,5 @@
 require 'lib/instance'
-require 'net/ssh'
+require 'lib/ssh'
 
 # for EC2 instances @aws_id is a random id
 # name is a value of 'Name' tag

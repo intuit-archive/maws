@@ -1,6 +1,6 @@
 require 'lib/command'
 require 'erubis'
-require 'net/ssh'
+require 'lib/ssh'
 require 'net/scp'
 require 'fileutils'
 
