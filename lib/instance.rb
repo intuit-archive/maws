@@ -1,5 +1,5 @@
 class Instance
-  attr_accessor :name, :role, :connection, :profile, :options
+  attr_accessor :name, :role, :connection, :profile, :command_options
   attr_reader :aws_id, :aws_description, :status, :role_config, :profile_role_config
 
   NA_STATUS = 'n/a'

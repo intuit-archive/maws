@@ -35,12 +35,14 @@ class Instance::ELB < Instance
     names = instances.map{|i| i.name}
     info "adding instances to ELB #{@aws_id}: #{names.join(', ')}"
     connection.elb.register_instances_with_load_balancer(@aws_id, instances.map{|i| i.aws_id})
+    info "...done"
   end
 
   def remove_instances(instances)
     names = instances.map{|i| i.name}
     info "removing instances to ELB #{@aws_id}: #{names.join(', ')}"
     connection.elb.deregister_instances_with_load_balancer(@aws_id, instances.map{|i| i.aws_id})
+    info "...done"
   end
 
   def attached_instances
@@ -48,7 +50,25 @@ class Instance::ELB < Instance
     @profile.defined_instances.select {|i| instance_ids.include?(i.aws_id)}
   end
 
+  def enable_zones(zones)
+    full_zones = zones.map {|z| command_options.region + z}
+    info "enabling zones #{full_zones.join(', ')} for ELB #{@aws_id}..."
+    connection.elb.enable_availability_zones_for_load_balancer(@aws_id, full_zones)
+    info "...done"
+  end
 
+  def disable_zones(zones)
+    full_zones = zones.map {|z| command_options.region + z}
+    info "disabling zones #{full_zones.join(', ')} for ELB #{@aws_id}"
+
+    if enabled_availability_zones.size <= 1
+      info "can't remove last remaining zone: #{enabled_availability_zones.first}"
+      return
+    end
+
+    connection.elb.disable_availability_zones_for_load_balancer(@aws_id, full_zones)
+    info "...done"
+  end
 
   def service
     :elb
@@ -64,6 +84,10 @@ class Instance::ELB < Instance
 
   def self.description_status(description)
     'available' if description[:load_balancer_name]
+  end
+
+  def enabled_availability_zones
+    @aws_description[:availability_zones]
   end
 
   def display_fields
