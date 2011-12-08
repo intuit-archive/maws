@@ -91,9 +91,10 @@ describe 'Instance::EC2' do
           :availability_zone => 'z',
           :key_name => 'keypair1',
           :min_count => 1, :max_count => 1,
-          :group_ids => ["secgroup1"],
           :user_data => 'abc123',
-          :instance_type => 'tiny.instance'
+          :instance_type => 'tiny.instance',
+          :group_names=>["ec2_default"],
+          :monitoring_enabled => nil
         }).once.and_return([{}])
 
       @instance.create
@@ -245,6 +246,7 @@ def mock_basic_ec2_instance_and_connection
 
   @keyid, @key = aws_test_key
   @instance.connection = AwsConnection.new(@keyid, @key, mash({:region => 'us-west-1', :logger => $right_aws_logger}))
+  @instance.stub!(:security_groups).and_return(%w(ec2_default))
 
   # don't wait for the server to respond (we're mocking the server)
   @instance.stub!(:sleep).and_return(nil)

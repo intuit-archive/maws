@@ -94,7 +94,7 @@ describe 'Instance::RDS' do
             :allocated_storage => 7,
             :db_name => 'dbname',
             :db_parameter_group => 'db-param-group',
-            :db_security_groups => ['db-sec-group'],
+            :db_security_groups => ['rds_default'],
             :backup_retention_period => nil,
             :preferred_backup_window => nil,
             :preferred_maintenance_window => nil,
@@ -147,7 +147,7 @@ describe 'Instance::RDS' do
       @rr_role_config.source_role = 'master-rds'
       @rr_profile_role_config.scope = 'zone'
 
-      @profile = Profile.new(nil, nil)
+      @profile = Profile.new(mash({}), mash({}))
       @rr_instance = Instance.new_for_service(:rds, 'rds1-rr', nil, @profile, @rr_role_config, @rr_profile_role_config, @command_options)
       @rr_instance.connection = @instance.connection
     end
@@ -252,4 +252,7 @@ def mock_basic_master_rds_instance_and_connection
 
   @keyid, @key = aws_test_key
   @instance.connection = AwsConnection.new(@keyid, @key, mash({:region => 'us-west-1', :logger => $right_aws_logger}))
+
+  @instance.stub!(:security_groups).and_return(%w(rds_default))
+
 end

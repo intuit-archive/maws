@@ -32,6 +32,9 @@ describe "configure command" do
     parser.should_receive(:opt).once.
       with(:hostname, "The SSH hostname", :short => '-h', :type => :string, :default => nil)
 
+    parser.should_receive(:opt).once.
+      with(:copy_to_local, "Copy template output to local folders", :type=>:flag, :default=>false, :short=>"-L")
+
     command.add_specific_options(parser)
   end
 
@@ -104,6 +107,7 @@ describe "configure command" do
       with('i1.amazonaws.com', 'root',
             {:keys => [identity_file],
              :verbose => :warn,
+             :keys_only => true,
              :auth_methods => ['publickey']}).and_return(ssh)
     ssh.should_receive(:exec!).once.with("fakecommand")
     ssh.should_receive(:close).once
