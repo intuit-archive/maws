@@ -178,7 +178,12 @@ class Configure < Command
         ssh.scp.upload!(config_output_path, configuration.location)
       end
 
-      timestamp = ssh.exec!("stat -c %y #{configuration.location}")
+      if configuration.permissions
+        chmod_command = "sudo su - -c 'chmod -R #{configuration.permissions} #{configuration.location}'"
+        do_remote_command(ssh, instance, 'permissions', chmod_command)
+      end
+
+      timestamp = ssh.exec!("sudo stat -c %y #{configuration.location}")
       ensure_output :info, "            new timestamp for #{configuration.location}: " + timestamp
     end
   end
