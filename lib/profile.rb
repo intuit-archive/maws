@@ -39,7 +39,7 @@ class Profile
       profile_role_config.count.times do |i|
         instances = []
         name = "%s-%s-%d" % [self.name,role_name,i+1]
-        if (role_config.scope || profile_role_config.scope) == 'region'
+        if (profile_role_config.scope || role_config.scope) == 'region'
           instance = Instance.new_for_service(role_config.service, name, 'unknown', self, role_config, profile_role_config, @command_options)
           instances << instance
           @defined_instances_in_specified_zone << instance
@@ -66,7 +66,7 @@ class Profile
     profile_role_config = @profile_config[role_name]
 
     # :zone or :region
-    from = (options[:from] || (role_config.scope || profile_role_config.scope)).to_sym
+    from = (options[:from] || (profile_role_config.scope || role_config.scope)).to_sym
     source_instances = (from == :zone) ? @defined_instances_in_specified_zone : @defined_instances
     source_instances = source_instances.find_all {|i| i.role_name == role_name }
 
