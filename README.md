@@ -21,7 +21,7 @@ MAWS is a collection of commands that modify AWS instances. You need to specify 
 
 You run MAWS like this:
 
-> maws profile-name command-name -s "...instance specification..." [other options]
+    maws profile-name command-name -s "...instance specification..." [other options]
 
 See below for explanations of profile-name, command-name and 'instance specification'
 
@@ -33,13 +33,13 @@ Instance Name
 
 The AWS account that MAWS uses can have any number of instances running. MAWS only sees some of them. They have to match MAWS style of naming. Maws instance names always look like this:
 
-> [prefix.]profile-role-index[zone]
+    [prefix.]profile-role-index[zone]
 
 For example, with profile 'foo-test', role 'searchbox' and 3 search boxes in zone a, MAWS will expect to see these names:
 
-> foo-test-searchbox-1a
-> foo-test-searchbox-2a
-> foo-test-searchbox-3a
+    foo-test-searchbox-1a
+    foo-test-searchbox-2a
+    foo-test-searchbox-3a
 
 
 Same name format is used for EC2, RDS and ELB services. Zone suffix is optional since some things might not be bound to a zone (for example, multi-zone RDS).
@@ -74,9 +74,9 @@ Scope
 
 Scope can be either "zone" or "region." ELB and Multi-AZ RDS always have the scope set to "region." EC2 instances (and single zone RDS) always reside in a particular availability zone, but are able to have a "logical" zone that is blank (logically they belong to the region). If they have scope of "region" their _name_ does not contain the zone letter. For example, a control box instance does not need to exist in more than one zone so it would be scoped to "region", while an app server would likely be scoped to zone. We might end up with a list of instances that looks like this (assuming 1 of each instance in zones a and b):
 
-> foo-app-1a
-> foo-app-1b
-> foo-control-1
+    foo-app-1a
+    foo-app-1b
+    foo-control-1
 
 
 Role Config
@@ -86,21 +86,21 @@ Located at config/roles/roles-set-name.yml. For application Foo this would be: c
 
 This YAML file contains a hash. Each key is a name of a role, each value is a role definition. For example:
 
-> masterdb:
->     service: rds
->     instance_class: 'db.m1.small'
->     allocated_storage: 6
->     master_username: 'dbuser'
->     master_password: 'dbpass'
->     db_name:
->     parameter_group: 'foo-db'
-> app:
->     service: ec2
->     image_name: 'foo-app-ami-name'
->     instance_type: 't1.micro'
->     security_groups:
->         - default
->     user_data: 'FOOAPPDATA'
+    masterdb:
+        service: rds
+        instance_class: 'db.m1.small'
+        allocated_storage: 6
+        master_username: 'dbuser'
+        master_password: 'dbpass'
+        db_name:
+        parameter_group: 'foo-db'
+    app:
+        service: ec2
+        image_name: 'foo-app-ami-name'
+        instance_type: 't1.micro'
+        security_groups:
+            - default
+        user_data: 'FOOAPPDATA'
 
 Besides defining roles, role config file has several keys that apply to all roles. For example 'settings' key for global settings and 'aliases' key to store YAML aliases.
 
@@ -114,28 +114,28 @@ Profile config has the format as roles config: a key for each role name and a va
 
 With above role config for 'app' and profile config 'config/profiles/foo-test.yml' for 'app':
 
-> app:
->     count: 5
->     security_groups:
->         - test
+    app:
+        count: 5
+        security_groups:
+            - test
 
 The final merge config for role 'app' MAWS will use will be:
 
-> app:
->     count: 5
->     service: ec2
->     image_name: 'foo-app-ami-name'
->     instance_type: 't1.micro'
->     security_groups:
->         - default
->         - test
->     user_data: 'FOOAPPDATA'
+    app:
+        count: 5
+        service: ec2
+        image_name: 'foo-app-ami-name'
+        instance_type: 't1.micro'
+        security_groups:
+            - default
+            - test
+        user_data: 'FOOAPPDATA'
 
 
 Profile config also needs to specify what roles config will be used and optionally the name of the security rules file (see below)
 
-> roles: foo
-> security_rules: foosec
+    roles: foo
+    security_rules: foosec
 
 `rule: foo` bit will make MAWS load and merge config/roles/foo.yml when profile foo-test is specified on the command line.
 
@@ -145,7 +145,7 @@ Instance Specification
 
 To use MAWS commands you have to specify what instances to operate on. The specification is limited to the selected profile name and the role names specified in the configs. Beyond these constrains any number of instances can be specified on the command line with -s option, like this:
 
-> maws profile-name command-name -s "...instance specification..." [other options]
+    maws profile-name command-name -s "...instance specification..." [other options]
 
 Instance specification is a string that describes what instances to operate on. These do not have to be instances that already exist. These can be instances that we want to exist.
 
@@ -180,47 +180,47 @@ MAWS needs to configure instances it creates to work together as a single system
 
 This is how MAWS knows that 'web' instances need to receive a 'httpd-vhosts.conf' file that connects them to 'app' instances.
 
-> web:
->     configurations:
->         -
->             name: vhosts
->             template: 'httpd-vhosts.conf'
->             location: '/usr/local/apache2/conf/httpd-vhosts.conf'
->             copy_as_user: 'root'
->             template_params:
->                 balancer: self
->                 balancer_members:
->                     select_many:
->                         role: app
->                         from: zone
->                         chunk_size: 2
+    web:
+        configurations:
+            -
+                name: vhosts
+                template: 'httpd-vhosts.conf'
+                location: '/usr/local/apache2/conf/httpd-vhosts.conf'
+                copy_as_user: 'root'
+                template_params:
+                    balancer: self
+                    balancer_members:
+                        select_many:
+                            role: app
+                            from: zone
+                            chunk_size: 2
 
 MAWS will look for config/templates/httpd-vhosts.conf.erb, it will process the template and insert 'app' instance host information into the template. It will upload the generated httpd-vhosts.conf file to /usr/local/apache2/conf/httpd-vhosts.conf on each 'web' instance.
 
 Here's what the template httpd-vhosts.conf.erb looks like:
 
-> # The app servers below will be get requests from this web server <%= balancer.name %>
-> # AKA <%= balancer.aws_id %> or <%= balancer.ip_address %> or <%= balancer.private_ip_address %>
-> <Proxy balancer://app_cluster>
-> <% balancer_members.each do |member| %>
->  # <%= member.name %>
->   BalancerMember http://<%= member.private_ip_address %>:8080
-> <% end %>
-> </Proxy>
+    # The app servers below will be get requests from this web server <%= balancer.name %
+    # AKA <%= balancer.aws_id %    or <%= balancer.ip_address %    or <%= balancer.private_ip_address %
+    <Proxy balancer://app_cluster
+    <% balancer_members.each do |member| %
+     # <%= member.name %
+      BalancerMember http://<%= member.private_ip_address %    :8080
+    <% end %
+    </Proxy
 
 
 Besides uploading templated configuration, MAWS can also run remote configuration commands via SSH on remote instances. The available commands are specified like this:
 
-> app:
->    configurations:
->       -
->         name: killunicorns
->         command: 'su - foouser -c "cd /foo/site; if [ -e tmp/pids/unicorn.pid ]; then <tmp/pids/unicorn.pid xargs kill; fi"'
+    app:
+       configurations:
+          -
+            name: killunicorns
+            command: 'su - foouser -c "cd /foo/site; if [ -e tmp/pids/unicorn.pid ]; then <tmp/pids/unicorn.pid xargs kill; fi"'
 
 
 Apply these configurations using `configure` command. For example, to kill unicorns on all 'app' in zone b:
 
-> maws foo-test configure -s "b app" -c killunicorns
+    maws foo-test configure -s "b app" -c killunicorns
 
 Template Parameters
 -------------------
@@ -247,28 +247,28 @@ If your profile config contains `security_rules: foosec` MAWS will load and use 
 
 This is an example of this security rules:
 
-> rds_default:
->     -
->         cidr: '0.0.0.0/0'
->     -
->         role: app
->
-> app:
->     -
->         role: web
->         port: 8080
->         protocol: tcp
->     -
->         cidr: ['1.1.1.1/1', '2.2.2.2/2']
->         port_from: 10000
->         port_to: 10100
->         protocol: udp
->
-> web:
->     -
->         group: 'amazon-elb/sg-843f59ed'
->         port: 80
->         protocol: tcp
+    rds_default:
+        -
+            cidr: '0.0.0.0/0'
+        -
+            role: app
+
+    app:
+        -
+            role: web
+            port: 8080
+            protocol: tcp
+        -
+            cidr: ['1.1.1.1/1', '2.2.2.2/2']
+            port_from: 10000
+            port_to: 10100
+            protocol: udp
+
+    web:
+        -
+            group: 'amazon-elb/sg-843f59ed'
+            port: 80
+            protocol: tcp
 
 
 Incoming firewall rules can be specified either as a AWS security group, a CIDR or a MAWS role. `rds_default` will be assigned to all RDS instances, while `ec2_default` will be assigned to all EC2 instances.
