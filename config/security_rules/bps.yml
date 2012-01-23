@@ -1,0 +1,39 @@
+ec2_default:
+    -
+        cidr: '208.240.243.170/32'
+        port: 22
+        protocol: tcp
+
+    -
+        cidr: '0.0.0.0/0'
+        port_from: 0
+        port_to: 20
+        protocol: icmp
+
+
+rds_default:
+    -
+        cidr: '0.0.0.0/0'
+    -
+        role: app
+
+app:
+    -
+        role: web
+        port: 8080
+        protocol: tcp
+    -
+        cidr: ['1.1.1.1/1', '2.2.2.2/2']
+        port_from: 10000
+        port_to: 10100
+        protocol: udp
+
+web:
+    -
+        group: 'amazon-elb/sg-843f59ed'
+        port: 80
+        protocol: tcp
+
+masterdb:
+    -
+        role: app

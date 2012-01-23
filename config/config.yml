@@ -1,0 +1,8 @@
+aws_key_path: 'config/aws.key'
+keypairs_path: 'config/keypairs'
+profiles_path: 'config/profiles'
+roles_path: 'config/roles'
+security_rules_path: 'config/security_rules'
+templates_path: 'config/templates'
+default_region: 'us-east-1'
+default_zone: 'c'

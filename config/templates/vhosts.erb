@@ -1,0 +1,146 @@
+#
+# VHOST file generated for the <%= community_name %> community in the <%= environment %> environment on <%= Time.now %> by the clerk
+#
+
+#
+# Port 80 is the standard, non-SSL port
+#
+
+<VirtualHost *:80>
+    ServerAdmin admin@<%= community_name %>.<%= environment %>.secret.com
+    ServerName <%= community_name %>.<%= environment %>.secret.com
+    <%= server_aliases %>
+
+    DocumentRoot /lcp/web
+    <Directory "/lcp/web">
+        Options FollowSymLinks
+        AllowOverride None
+        Order allow,deny
+        Allow from all
+    </Directory>
+
+    # expiration control: tell the browsers to cache these for a month
+    ExpiresActive On
+    ExpiresByType application/javascript "access plus 1 day"
+    ExpiresByType text/css "access plus 1 day"
+    ExpiresByType image/gif "access plus 1 day"
+    ExpiresByType image/jpg "access plus 1 day"
+    ExpiresByType image/png "access plus 1 day"
+
+    RewriteEngine On
+
+    #
+    ### STATIC FILES
+    #
+
+    # - COMMUNITY-SPECIFIC
+    #   try to find in community-specific directory: if found stop and be happy:
+    RewriteCond         %{DOCUMENT_ROOT}/public_<%= community_name %>/%{REQUEST_FILENAME}  -f
+    RewriteRule  ^(.+)  %{DOCUMENT_ROOT}/public_<%= community_name %>/$1  [L]
+
+    # - GENERIC
+    #   second try to find it in the base directory: if found stop and be happy:
+    RewriteCond         %{DOCUMENT_ROOT}/public/releases/<%= deploy_version %>/%{REQUEST_FILENAME}  -f
+    RewriteRule  ^(.+)  %{DOCUMENT_ROOT}/public/releases/<%= deploy_version %>/$1  [L]
+
+	<% unless public_access %>
+	    # block access from non-secret public IP addresses
+	    SetEnvIfNoCase X-Forwarded-For 208\.74\.45\.49 INTERNAL=yes
+	    SetEnvIfNoCase X-Forwarded-For 209\.82\.111\.194 INTERNAL=yes
+	    SetEnvIfNoCase X-Forwarded-For 208\.240\.243\.170 INTERNAL=yes
+	    SetEnvIfNoCase X-Forwarded-For 65\.204\.229\.11 INTERNAL=yes
+	    SetEnvIfNoCase X-Forwarded-For 208\.29\.163\.248 INTERNAL=yes
+	    SetEnvIfNoCase X-Forwarded-For 67\.135\.240\.36 INTERNAL=yes
+	    SetEnvIfNoCase X-Forwarded-For 125\.16\.135\.194 INTERNAL=yes
+
+	    RewriteCond %{ENV:INTERNAL} !yes
+	    RewriteRule ^.* /public/releases/<%= deploy_version %>/403.html [L]
+	<% end %>
+
+	<% if force_nonstatic_ssl %>
+    	# force to SSL if not a static request
+	    RewriteCond %{HTTPS} off
+	    RewriteRule ^(.*)$ https://%{HTTP_HOST}$1 [NE,R=301,L]
+	<% end %>
+    # show turnaway if it exists (community-specific)
+    RewriteCond %{DOCUMENT_ROOT}/public_<%= community_name %>/system/turnaway.html -f
+    RewriteCond %{SCRIPT_FILENAME} !turnaway.html
+    RewriteRule ^.*$ /public_<%= community_name %>/system/turnaway.html [L]
+
+    #
+    ### NON-STATIC FILES
+    #
+
+    # redirect all non-static requests to cluster
+    RewriteCond %{DOCUMENT_ROOT}/%{REQUEST_FILENAME} !-f
+    RewriteRule ^/(.*)$ balancer://<%= community_name %>_cluster%{REQUEST_URI} [P,QSA,L]
+
+    ErrorLog "|/usr/local/apache2/bin/rotatelogs -l /usr/local/apache2/logs/localhost/<%= community_name %>_error_log.%Y-%m-%d 86400"
+    CustomLog "|/usr/local/apache2/bin/rotatelogs -l /usr/local/apache2/logs/localhost/<%= community_name %>_access_log.%Y-%m-%d 86400" vcombined
+
+</VirtualHost>
+
+#
+# SSL port is 81, load balancer handles offloading of SSL and sends requests here...
+#
+
+<VirtualHost *:81>
+    ServerAdmin admin@<%= community_name %>.<%= environment %>.secret.com
+    ServerName <%= community_name %>.<%= environment %>.secret.com
+    <%= server_aliases %>
+
+    DocumentRoot /lcp/web
+    <Directory "/lcp/web">
+        Options FollowSymLinks
+        AllowOverride None
+        Order allow,deny
+        Allow from all
+    </Directory>
+
+    ExpiresActive On
+    ExpiresByType application/javascript "access plus 1 day"
+    ExpiresByType text/css "access plus 1 day"
+    ExpiresByType image/gif "access plus 1 day"
+    ExpiresByType image/jpg "access plus 1 day"
+    ExpiresByType image/png "access plus 1 day"
+
+    RewriteEngine On
+
+    #   try to find in community-specific directory: if found stop and be happy:
+    RewriteCond         %{DOCUMENT_ROOT}/public_<%= community_name %>/%{REQUEST_FILENAME}  -f
+    RewriteRule  ^(.+)  %{DOCUMENT_ROOT}/public_<%= community_name %>/$1  [L]
+
+    #   second try to find it in the base directory: if found stop and be happy:
+    RewriteCond         %{DOCUMENT_ROOT}/public/releases/<%= deploy_version %>/%{REQUEST_FILENAME}  -f
+    RewriteRule  ^(.+)  %{DOCUMENT_ROOT}/public/releases/<%= deploy_version %>/$1  [L]
+
+	<% unless public_access %>
+	    # Forbid access from non-secret public IP addresses
+	    SetEnvIfNoCase X-Forwarded-For 208\.74\.45\.49 INTERNAL=yes
+	    SetEnvIfNoCase X-Forwarded-For 209\.82\.111\.194 INTERNAL=yes
+	    SetEnvIfNoCase X-Forwarded-For 208\.240\.243\.170 INTERNAL=yes
+	    SetEnvIfNoCase X-Forwarded-For 65\.204\.229\.11 INTERNAL=yes
+	    SetEnvIfNoCase X-Forwarded-For 208\.29\.163\.248 INTERNAL=yes
+	    SetEnvIfNoCase X-Forwarded-For 67\.135\.240\.36 INTERNAL=yes
+	    SetEnvIfNoCase X-Forwarded-For 125\.16\.135\.194 INTERNAL=yes
+    <% end %>
+
+    RewriteCond %{ENV:INTERNAL} !yes
+    RewriteRule ^.* /public/releases/<%= deploy_version %>/403.html [L]
+
+    # rewrite for turnaway
+    RewriteCond %{DOCUMENT_ROOT}/public_<%= community_name %>/system/turnaway.html -f
+    RewriteCond %{SCRIPT_FILENAME} !turnaway.html
+    RewriteRule ^.*$ /public_<%= community_name %>/system/turnaway.html [L]
+
+
+    # redirect all non-static requests to cluster
+    RewriteCond %{DOCUMENT_ROOT}/%{REQUEST_FILENAME} !-f
+    RewriteRule ^/(.*)$ balancer://<%= community_name %>_cluster%{REQUEST_URI} [P,QSA,L]
+
+    RequestHeader set X_FORWARDED_PROTO "https"
+
+    ErrorLog "|/usr/local/apache2/bin/rotatelogs -l /usr/local/apache2/logs/localhost/<%= community_name %>_error_log.%Y-%m-%d 86400"
+    CustomLog "|/usr/local/apache2/bin/rotatelogs -l /usr/local/apache2/logs/localhost/<%= community_name %>_access_log.%Y-%m-%d 86400" vcombined
+
+</VirtualHost>

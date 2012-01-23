@@ -1,0 +1,95 @@
+aliases:
+    &stop_http
+        name: stop
+        command: 'service httpd2 stop'
+
+settings:
+    key1: "val1"
+    key2: "val2"
+
+lbweb:
+    service: elb
+    listeners:
+        -
+            protocol: http
+            # protocol: tcp
+            load_balancer_port: 80
+            instance_port: 8080
+        -
+            # protocol: http
+            protocol: tcp
+            load_balancer_port: 1111
+            instance_port: 2222
+    health_check:
+        target: "HTTP:80/"
+        # target: "TCP:1001"
+        interval: 30
+        timeout: 5
+        healthy_threshold: 6
+        unhealthy_threshold: 2
+
+
+web:
+    service: ec2
+    # image_id: 'ami-572eef3e'
+    # image_name: 'ami-bps-test-web'
+    image_name: 'bps-web-current'
+    # instance_type: 'm1.large'
+    instance_type: 't1.micro'
+    security_groups:
+        - default
+        - bps-e2e-web
+    user_data: 'abc123'
+    configurations:
+        - *stop_http
+
+
+app:
+    service: ec2
+    # image_id: 'ami-87b578ee'
+    image_name: 'bps-app-current'
+    # instance_type: 'c1.xlarge'
+    instance_type: 't1.micro'
+    security_groups:
+        - bps-e2e-app
+        - default
+    user_data: 'APPDATA'
+
+masterdb:
+    service: rds
+    instance_class: 'db.m1.small'
+    allocated_storage: 6
+    master_username: 'root'
+    master_password: 'secret01'
+    db_name:
+    parameter_group: 'bps-db'
+
+slavedb:
+    service: rds
+    replica: true
+    source_role: masterdb
+    instance_class: 'db.m1.small'
+
+monitor:
+    service: ec2
+    image_name: 'bps-monitor-v1'
+    configure_without_running: true
+    security_groups:
+        - default
+        - bps-e2e-app
+    configurations:
+        -
+            name: hosts_list
+            template: monitor_instances_list
+            location: '/tmp/ec2_monitor/hosts/bpstest'
+            template_params:
+                profile: profile
+
+        -
+            name: enable
+            command: "touch /tmp/ec2_monitor/enabled"
+        -
+            name: disable
+            command: "rm /tmp/ec2_monitor/enabled
+
+
