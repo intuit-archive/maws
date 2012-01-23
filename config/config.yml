@@ -1,0 +1,8 @@
+paths:
+    aws_key: 'config/aws.key'
+    keypairs: 'config/keypairs'
+    profiles: 'config/profiles'
+    roles: 'config/roles'
+    security_rules: 'config/security_rules'
+    templates: 'config/templates'
+default_region: 'us-east-1'

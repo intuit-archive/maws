@@ -1,0 +1,12 @@
+# database file for app server <%= server.name %> (<%= Time.now %>)
+production:
+  adapter: mysql2
+  database: <%= masterdb.db_name %>
+  username: <%= masterdb.master_username %>
+  password: <%= masterdb.master_password %>
+  host: <%= masterdb.endpoint_address %>
+  port: 3306
+  encoding: utf8
+  reconnect: false
+  pool: 5
+

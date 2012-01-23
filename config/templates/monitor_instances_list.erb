@@ -1,0 +1,3 @@
+<% instances.alive.without_role('monitor').find_all{|i| !i.configure_without_running}.each do |i|%>
+<%= i.name %> <%= i.role_name%> <%= i.dns_name%>
+<% end %>
