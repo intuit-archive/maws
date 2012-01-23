@@ -145,58 +145,60 @@ class Configure < Command
   end
 
   def generate_and_queue_upload_template(instance, configuration)
-    # prepare params for config file interpolation
-    resolved_params = {}
-    configuration.template_params ||= {}
+    locations = [configuration.location].flatten
+    locations.each do |location|
+      # prepare params for config file interpolation
+      resolved_params = {}
+      configuration.template_params ||= {}
 
-    configuration.template_params.each do |param_name, param_config|
-      resolved_params[param_name] = resolve_template_param(instance, configuration.template, param_name, param_config)
-    end
+      configuration.template_params.each do |param_name, param_config|
+        resolved_params[param_name] = resolve_template_param(instance, configuration.template, param_name, param_config)
+      end
+      resolved_params['instance'] = instance
+      resolved_params['instances'] = instances
+      resolved_params['settings'] = @profile.settings
 
-    resolved_params['instance'] = instance
-    resolved_params['instances'] = instances
-    resolved_params['settings'] = @config.combined.settings
+      # generate config file
+      template_path = File.join(TEMPLATES_PATH, configuration.template + ".erb")
+      template = File.read(template_path)
+      generated_config =  Erubis::Eruby.new(template).result(resolved_params)
 
-    # generate config file
-    template_path = File.join(@config.config.paths.templates, configuration.template + ".erb")
-    template = File.read(template_path)
-    generated_config =  Erubis::Eruby.new(template).result(resolved_params)
+      Dir.mkdir(TEMPLATE_OUTPUT_DIR) if !File.directory?(TEMPLATE_OUTPUT_DIR)
+      config_output_path = File.join(TEMPLATE_OUTPUT_DIR, "#{instance.name}--#{instance.aws_id}." + configuration.template)
+      File.open(config_output_path, "w") {|f| f.write(generated_config)}
+      info "generated  '#{config_output_path}'"
 
-    Dir.mkdir(@template_output_dir) if !File.directory?(@template_output_dir)
-    config_output_path = File.join(@template_output_dir, "#{instance.name}--#{instance.aws_id}." + configuration.template)
-    File.open(config_output_path, "w") {|f| f.write(generated_config)}
-    info "generated  '#{config_output_path}'"
-
-    if options.copy_to_local
-      info "copying to local path: #{configuration.location}"
-      FileUtils.cp(config_output_path, configuration.location)
-    end
-
-    queue_ssh_action(instance) do |ssh|
-      ensure_output :info, "configuring #{configuration.template} for #{instance.name}"
-
-      if options.dump
-        ensure_output :info, "\n\n------- BEGIN #{config_output_path} -------"
-        ensure_output :info, generated_config
-        ensure_output :info, "-------- END #{config_output_path} --------\n\n"
+      if options.copy_to_local
+        info "copying to local path: #{location}"
+        FileUtils.cp(config_output_path, location)
       end
 
-      if configuration.copy_as_user
-        remote_tmp_path = File.join("/tmp/", "#{instance.name}--#{instance.aws_id}." + configuration.template)
-        ssh.scp.upload!(config_output_path, remote_tmp_path)
-        cp_command = "sudo su - #{configuration.copy_as_user} -c 'cp -f #{remote_tmp_path} #{configuration.location}' && sudo rm #{remote_tmp_path}"
-        do_remote_command(ssh, instance, 'copy_as_user', cp_command)
-      else
-        ssh.scp.upload!(config_output_path, configuration.location)
-      end
+      queue_ssh_action(instance) do |ssh|
+        ensure_output :info, "configuring #{configuration.template} for #{instance.name}"
 
-      if configuration.permissions
-        chmod_command = "sudo su - -c 'chmod -R #{configuration.permissions} #{configuration.location}'"
-        do_remote_command(ssh, instance, 'permissions', chmod_command)
-      end
+        if options.dump
+          ensure_output :info, "\n\n------- BEGIN #{config_output_path} -------"
+          ensure_output :info, generated_config
+          ensure_output :info, "-------- END #{config_output_path} --------\n\n"
+        end
 
-      timestamp = ssh.exec!("sudo stat -c %y #{configuration.location}")
-      ensure_output :info, "            new timestamp for #{configuration.location}: " + timestamp
+        if configuration.copy_as_user
+          remote_tmp_path = File.join("/tmp/", "#{instance.name}--#{instance.aws_id}." + configuration.template)
+          ssh.scp.upload!(config_output_path, remote_tmp_path)
+          cp_command = "sudo su - #{configuration.copy_as_user} -c 'cp -f #{remote_tmp_path} #{location}' && sudo rm #{remote_tmp_path}"
+          do_remote_command(ssh, instance, 'copy_as_user', cp_command)
+        else
+          ssh.scp.upload!(config_output_path, location)
+        end
+
+        if configuration.permissions
+          chmod_command = "sudo su - -c 'chmod -R #{configuration.permissions} #{location}'"
+          do_remote_command(ssh, instance, 'permissions', chmod_command)
+        end
+
+        timestamp = ssh.exec!("sudo stat -c %y #{location}")
+        ensure_output :info, "            new timestamp for #{location}: " + timestamp
+      end
     end
   end
 
