@@ -1,4 +1,0 @@
-all commands take -s "specification" that specifies zones, roles and indexes of instances
-config.yml: paths is a top level key
-wait command takes -t for target state
-wait command simplified the message it prints when running
