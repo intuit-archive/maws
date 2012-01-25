@@ -1,5 +1,5 @@
 .idea
-config/aws.key
-config/keypairs/*
+examples/aws.key
+examples/keypairs/*
 logs/*
 tmp/*
