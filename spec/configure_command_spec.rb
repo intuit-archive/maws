@@ -1,7 +1,7 @@
 require 'spec/spec_helper'
-require 'lib/connection'
-require 'lib/command'
-require 'lib/commands/configure'
+require 'maws/connection'
+require 'maws/command'
+require 'maws/commands/configure'
 
 
 describe "configure command" do

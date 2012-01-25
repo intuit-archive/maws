@@ -1,7 +1,7 @@
 require 'spec/spec_helper'
-require 'lib/connection'
-require 'lib/command'
-require 'lib/command_parser'
+require 'maws/connection'
+require 'maws/command'
+require 'maws/command_parser'
 
 
 describe "CommandParser" do

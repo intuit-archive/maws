@@ -1,7 +1,7 @@
 require 'spec/spec_helper'
-require 'lib/connection'
-require 'lib/instance'
-require 'lib/profile'
+require 'maws/connection'
+require 'maws/instance'
+require 'maws/profile'
 
 
 describe 'Instance::RDS' do

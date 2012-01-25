@@ -1,6 +1,6 @@
 require 'spec/spec_helper'
-require 'lib/connection'
-require 'lib/instance'
+require 'maws/connection'
+require 'maws/instance'
 
 describe 'Instance' do
   it "creates subclasses for different services" do

@@ -1,5 +1,5 @@
 require 'spec/spec_helper'
-require 'lib/specification'
+require 'maws/specification'
 
 describe 'Specification' do
   it "parses index ranges" do

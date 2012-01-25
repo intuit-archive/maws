@@ -1,6 +1,6 @@
 require 'spec/spec_helper'
-require 'lib/connection'
-require 'lib/command'
+require 'maws/connection'
+require 'maws/command'
 
 describe "Command" do
   it "defines generic command line options" do

@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+
+# code_base_path = File.expand_path("..", File.dirname(__FILE__))
+# $LOAD_PATH << code_base_path
+
+require 'rubygems'
+require 'maws'
+
+Maws.load_and_run!

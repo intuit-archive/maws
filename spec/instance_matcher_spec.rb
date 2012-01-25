@@ -1,5 +1,5 @@
 require 'spec/spec_helper'
-require 'lib/instance_matcher'
+require 'maws/instance_matcher'
 
 describe 'InstanceMatcher' do
   before do

@@ -1,4 +1,4 @@
-require 'lib/mash'
+require 'maws/mash'
 
 
 unless defined? SPEC_PATH

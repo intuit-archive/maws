@@ -1,7 +1,7 @@
 require 'spec/spec_helper'
-require 'lib/connection'
-require 'lib/command'
-require 'lib/elb_command'
+require 'maws/connection'
+require 'maws/command'
+require 'maws/elb_command'
 
 describe "ElbCommand" do
   it "partitions specified instances into ELB and non-ELB sets" do
