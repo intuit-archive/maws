@@ -145,15 +145,19 @@ class Configure < Command
     resolved_params['instance'] = instance
     resolved_params['settings'] = @profile.settings
 
-    # generate config file
-    template_path = File.join(TEMPLATES_PATH, configuration.template + ".erb")
-    template = File.read(template_path)
-    generated_config =  Erubis::Eruby.new(template).result(resolved_params)
+    if configuration.raw == true
+      config_output_path = File.join(TEMPLATES_PATH, configuration.template)
+    else
+      # generate config file
+      template_path = File.join(TEMPLATES_PATH, configuration.template + ".erb")
+      template = File.read(template_path)
+      generated_config =  Erubis::Eruby.new(template).result(resolved_params)
 
-    Dir.mkdir(TEMPLATE_OUTPUT_DIR) if !File.directory?(TEMPLATE_OUTPUT_DIR)
-    config_output_path = File.join(TEMPLATE_OUTPUT_DIR, "#{instance.name}--#{instance.aws_id}." + configuration.template)
-    File.open(config_output_path, "w") {|f| f.write(generated_config)}
-    info "generated  '#{config_output_path}'"
+      Dir.mkdir(TEMPLATE_OUTPUT_DIR) if !File.directory?(TEMPLATE_OUTPUT_DIR)
+      config_output_path = File.join(TEMPLATE_OUTPUT_DIR, "#{instance.name}--#{instance.aws_id}." + configuration.template)
+      File.open(config_output_path, "w") {|f| f.write(generated_config)}
+      info "generated  '#{config_output_path}'"
+    end
 
     if options.copy_to_local
       info "copying to local path: #{configuration.location}"
