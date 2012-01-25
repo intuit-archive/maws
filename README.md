@@ -1,3 +1,8 @@
+How do I install it?
+====================
+
+    sudo gem install maws
+
 What is it for?
 ===============
 
