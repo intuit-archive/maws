@@ -11,7 +11,7 @@ MAWS aims to make deploying a multi-instance AWS infrastructure similar to deplo
 How do you use it?
 =================
 
-To use MAWS you need to install the maws Ruby gem, then create some config files and then run the `maws` command. It will look for and load the 'config' folder relative to your working directory.
+To use MAWS you need to install the maws Ruby gem, then create some config files and then run the `maws` command. It will look for and load the 'maws.yml' file in your working directory. See `examples` folder how to create MAWS configurations.
 
 Your configs will specify what types of instances you have, how many of each type you would like and how they should be configured so they can see each other.
 
@@ -82,7 +82,7 @@ Scope can be either "zone" or "region." ELB and Multi-AZ RDS always have the sco
 Role Config
 -----------
 
-Located at config/roles/roles-set-name.yml. For application Foo this would be: config/roles/foo.yml. The role configs in foo.yml will be reused by multiple profiles (for example: foo-test, foo-prod, foo-perf).
+Located at roles/roles-set-name.yml. For application Foo this would be: roles/foo.yml. The role configs in foo.yml will be reused by multiple profiles (for example: foo-test, foo-prod, foo-perf).
 
 This YAML file contains a hash. Each key is a name of a role, each value is a role definition. For example:
 
@@ -108,11 +108,11 @@ Besides defining roles, role config file has several keys that apply to all role
 Profile Config
 --------------
 
-Located at config/roles/profile-name.yml. For example, test environment for application Foo would be stored at config/profiles/foo-test.yml.
+Located at roles/profile-name.yml. For example, test environment for application Foo would be stored at profiles/foo-test.yml.
 
 Profile config has the format as roles config: a key for each role name and a value for the definition. MAWS will merge profile and role configs into a single definition.
 
-With above role config for 'app' and profile config 'config/profiles/foo-test.yml' for 'app':
+With above role config for 'app' and profile config 'profiles/foo-test.yml' for 'app':
 
     app:
         count: 5
@@ -137,7 +137,7 @@ Profile config also needs to specify what roles config will be used and optional
     roles: foo
     security_rules: foosec
 
-`rule: foo` bit will make MAWS load and merge config/roles/foo.yml when profile foo-test is specified on the command line.
+`rule: foo` bit will make MAWS load and merge roles/foo.yml when profile foo-test is specified on the command line.
 
 
 Instance Specification
@@ -195,7 +195,7 @@ This is how MAWS knows that 'web' instances need to receive a 'httpd-vhosts.conf
                             from: zone
                             chunk_size: 2
 
-MAWS will look for config/templates/httpd-vhosts.conf.erb, it will process the template and insert 'app' instance host information into the template. It will upload the generated httpd-vhosts.conf file to /usr/local/apache2/conf/httpd-vhosts.conf on each 'web' instance.
+MAWS will look for templates/httpd-vhosts.conf.erb, it will process the template and insert 'app' instance host information into the template. It will upload the generated httpd-vhosts.conf file to /usr/local/apache2/conf/httpd-vhosts.conf on each 'web' instance.
 
 Here's what the template httpd-vhosts.conf.erb looks like:
 
@@ -206,7 +206,7 @@ Here's what the template httpd-vhosts.conf.erb looks like:
      # <%= member.name %
       BalancerMember http://<%= member.private_ip_address %    :8080
     <% end %
-    </Proxy
+    </Proxy>
 
 
 Besides uploading templated configuration, MAWS can also run remote configuration commands via SSH on remote instances. The available commands are specified like this:
@@ -243,7 +243,7 @@ Security Rules
 
 Profile and role configs can specify `security_group` for any role. In addition to that, you can optionally use a security rules file to create AWS security groups on dynamically for your profiles using `set-security-rules` command. These dynamic security groups will be automatically assigned when MAWS creates new instances.
 
-If your profile config contains `security_rules: foosec` MAWS will load and use config/security_rules/foosec.yml.
+If your profile config contains `security_rules: foosec` MAWS will load and use security_rules/foosec.yml.
 
 This is an example of this security rules:
 
