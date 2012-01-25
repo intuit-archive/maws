@@ -12,7 +12,7 @@ class Loader
   def initialize(base_path, config_config_path)
     @base_path = base_path
     @cc_path = config_config_path
-    @commands_path = File.expand_path("../commands/", File.dirname(__FILE__))
+    @commands_path = File.expand_path("commands/", File.dirname(__FILE__))
 
     # stores all config
     @config = mash
@@ -42,7 +42,7 @@ class Loader
   def load_config
     @config.config = mash(YAML.load_file(@cc_path))
 
-    @config.config.paths.commands = 'lib/commands/'
+    @config.config.paths.commands = @commands_path
     @config.config.paths.base = @base_path
     @config.config.paths.config = @cc_path
     @config.config.paths.template_output = 'tmp/'
