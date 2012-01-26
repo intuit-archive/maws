@@ -20,7 +20,7 @@ def symbolize(*names)
   names.map {|n| n.to_sym}
 end
 
-CONFIG_CONFIG_PATH = 'config/config.yml'
+CONFIG_CONFIG_PATH = ENV['MAWS_CONFIG_PATH'] || 'config/config.yml'
 
 unless File.exists? CONFIG_CONFIG_PATH
   $stderr.puts "No main config file: #{CONFIG_CONFIG_PATH} found. Quiting!"
