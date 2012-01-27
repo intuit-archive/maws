@@ -182,6 +182,11 @@ class Configure < Command
         ssh.scp.upload!(config_output_path, configuration.location)
       end
 
+      if configuration.owner
+        chown_command = "sudo su - -c 'chown -R #{configuration.owner} #{location}'"
+        do_remote_command(ssh, instance, 'permissions', chown_command)
+      end
+
       if configuration.permissions
         chmod_command = "sudo su - -c 'chmod -R #{configuration.permissions} #{configuration.location}'"
         do_remote_command(ssh, instance, 'permissions', chmod_command)
