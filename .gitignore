@@ -3,3 +3,4 @@ config/aws.key
 config/keypairs/*
 logs/*
 tmp/*
+examples
