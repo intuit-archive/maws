@@ -1,6 +1,7 @@
 require 'right_aws'
 require 'maws/mash'
 require 'maws/description'
+require 'maws/logger'
 
 class Connection
   attr_reader :ec2, :rds, :elb
@@ -62,60 +63,77 @@ class Connection
   end
 
   def ec2_descriptions
+    filter_current_profile_prefix(filter_terminated_ec2_descriptions(all_ec2_descriptions))
+  end
+
+  def ebs_descriptions
+    filter_current_profile_prefix(all_ebs_descriptions)
+  end
+
+  def rds_descriptions
+    return [] unless rds
+
+    filter_current_profile_prefix(all_rds_descriptions)
+  end
+
+  def elb_descriptions
+    return [] unless elb
+
+    filter_current_profile_prefix(all_elb_descriptions)
+  end
+
+
+  private
+
+  def all_ec2_descriptions
     # convert aws description to Description
-    descriptions =  descriptions = ec2.describe_instances.map {|description|
+    ec2.describe_instances.map {|description|
       description[:service] = :ec2
       Description.create(description)
     }
+  end
 
+  def all_ebs_descriptions
+    ec2.describe_volumes.map { |description|
+      description[:service] = :ebs
+      Description.create(description)
+    }
+  end
+
+  def all_rds_descriptions
+    rds.describe_db_instances.map { |description|
+      description[:service] = :rds
+      Description.create(description)
+    }
+  end
+
+  def all_elb_descriptions
+    elb.describe_load_balancers.map { |description|
+      description[:service] = :elb
+      Description.create(description)
+    }
+  end
+
+  def filter_terminated_ec2_descriptions(descriptions)
     # filter out terminated when same name exists as a living one and terminated
     by_name = descriptions.group_by { |d| d.name }
 
     # if there is one than more for the same name: delete terminated descriptions, take the last one (trust AWS sorting)
     by_name.map {|name, descriptions|
       if descriptions.count > 1
-        descriptions.delete_if {|d| d.status == "terminated"}
+        if descriptions.count {|d| d.status == "terminated"} != descriptions.count
+          # don't delete all of them if all are terminated
+          descriptions.delete_if {|d| d.status == "terminated"}
+        end
         descriptions.replace([descriptions.last]).compact!
       end
     }
 
-    filter_current_profile_prefix(by_name.values.flatten)
+    by_name.values.flatten
   end
-
-  def rds_descriptions
-    return [] unless rds
-
-    descriptions = rds.describe_db_instances.map { |description|
-      description[:service] = :rds
-      Description.create(description)
-    }
-
-    filter_current_profile_prefix(descriptions)
-  end
-
-  def elb_descriptions
-    return [] unless elb
-
-    descriptions = elb.describe_load_balancers.map { |description|
-      description[:service] = :elb
-      Description.create(description)
-    }
-
-    filter_current_profile_prefix(descriptions)
-  end
-
-  def ebs_descriptions
-    descriptions = ec2.describe_volumes.map { |description|
-      description[:service] = :ebs
-      Description.create(description)
-    }
-
-    filter_current_profile_prefix(descriptions)
-  end
-
-  private
 
   def filter_current_profile_prefix(descriptions)
     descriptions.delete_if {|d| d.profile != @config.profile.name || d.prefix != @config.prefix}
   end
+
 end

@@ -16,6 +16,14 @@ def aws_test_key
   return 'no', 'good'
 end
 
+def mock_config
+  @config = mash()
+  @config.aws_key = mash({:key_id => "keyid", :secret_key => "secretkey"})
+  @config.region = "test-region-1"
+
+  @config
+end
+
 class SpecLogger
   def initialize
     @log_path = "logs/spec.log"
