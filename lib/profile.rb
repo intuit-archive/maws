@@ -65,6 +65,8 @@ class Profile
     role_config = @roles_config[role_name]
     profile_role_config = @profile_config[role_name]
 
+    return [] unless (role_config && profile_role_config)
+
     # :zone or :region
     from = (options[:from] || (profile_role_config.scope || role_config.scope)).to_sym
     source_instances = (from == :zone) ? @defined_instances_in_specified_zone : @defined_instances
