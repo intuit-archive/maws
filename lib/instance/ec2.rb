@@ -15,7 +15,7 @@ class Instance::EC2 < Instance
       :key_name => config(:keypair),
       :min_count => 1,
       :max_count => 1,
-      :group_names => security_groups,
+      :group_ids => security_groups,
       :user_data => config(:user_data),
       :monitoring_enabled => config(:monitoring_enabled),
       :instance_type => config(:instance_type))
