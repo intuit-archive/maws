@@ -1,4 +1,4 @@
-!!! This project has been deprecated. We recommend you fork it or look for an alternative solution. !!!
+**!!! This project has been deprecated. We recommend you fork it or look for an alternative solution. !!!**
 
 How do I install it?
 ====================
